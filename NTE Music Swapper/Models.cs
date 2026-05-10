@@ -43,7 +43,7 @@ namespace NtePakTool
     //アプリ設定のJSON用
     public class AppSettingsJson
     {
-        public bool SaveModEnabled { get; set; } = false;
+        public bool SaveModEnabled { get; set; } = true;
         public long OriginalPakSize { get; set; } = 0;
         public string GameRootDir { get; set; } = "";
         public string WwiseConsolePath { get; set; } = "";
