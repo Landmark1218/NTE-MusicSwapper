@@ -1,0 +1,81 @@
+C:\Users\mr200\Documents\GitHub\NTE-MusicSwapper\NTE Music Swapper\bin\Release\net8.0-windows\NTE Music Swapper.exe
+C:\Users\mr200\Documents\GitHub\NTE-MusicSwapper\NTE Music Swapper\bin\Release\net8.0-windows\NTE Music Swapper.deps.json
+C:\Users\mr200\Documents\GitHub\NTE-MusicSwapper\NTE Music Swapper\bin\Release\net8.0-windows\NTE Music Swapper.runtimeconfig.json
+C:\Users\mr200\Documents\GitHub\NTE-MusicSwapper\NTE Music Swapper\bin\Release\net8.0-windows\NTE Music Swapper.dll
+C:\Users\mr200\Documents\GitHub\NTE-MusicSwapper\NTE Music Swapper\bin\Release\net8.0-windows\NTE Music Swapper.pdb
+C:\Users\mr200\Documents\GitHub\NTE-MusicSwapper\NTE Music Swapper\bin\Release\net8.0-windows\AssetRipper.TextureDecoder.dll
+C:\Users\mr200\Documents\GitHub\NTE-MusicSwapper\NTE Music Swapper\bin\Release\net8.0-windows\Blake3.dll
+C:\Users\mr200\Documents\GitHub\NTE-MusicSwapper\NTE Music Swapper\bin\Release\net8.0-windows\BouncyCastle.Cryptography.dll
+C:\Users\mr200\Documents\GitHub\NTE-MusicSwapper\NTE Music Swapper\bin\Release\net8.0-windows\CommunityToolkit.HighPerformance.dll
+C:\Users\mr200\Documents\GitHub\NTE-MusicSwapper\NTE Music Swapper\bin\Release\net8.0-windows\FixedMathSharp.dll
+C:\Users\mr200\Documents\GitHub\NTE-MusicSwapper\NTE Music Swapper\bin\Release\net8.0-windows\Fmod5Sharp.dll
+C:\Users\mr200\Documents\GitHub\NTE-MusicSwapper\NTE Music Swapper\bin\Release\net8.0-windows\GenericReader.dll
+C:\Users\mr200\Documents\GitHub\NTE-MusicSwapper\NTE Music Swapper\bin\Release\net8.0-windows\IndexRange.dll
+C:\Users\mr200\Documents\GitHub\NTE-MusicSwapper\NTE Music Swapper\bin\Release\net8.0-windows\UE4Config.dll
+C:\Users\mr200\Documents\GitHub\NTE-MusicSwapper\NTE Music Swapper\bin\Release\net8.0-windows\K4os.Compression.LZ4.dll
+C:\Users\mr200\Documents\GitHub\NTE-MusicSwapper\NTE Music Swapper\bin\Release\net8.0-windows\K4os.Compression.LZ4.Streams.dll
+C:\Users\mr200\Documents\GitHub\NTE-MusicSwapper\NTE Music Swapper\bin\Release\net8.0-windows\K4os.Hash.xxHash.dll
+C:\Users\mr200\Documents\GitHub\NTE-MusicSwapper\NTE Music Swapper\bin\Release\net8.0-windows\SevenZip.dll
+C:\Users\mr200\Documents\GitHub\NTE-MusicSwapper\NTE Music Swapper\bin\Release\net8.0-windows\MessagePack.dll
+C:\Users\mr200\Documents\GitHub\NTE-MusicSwapper\NTE Music Swapper\bin\Release\net8.0-windows\MessagePack.Annotations.dll
+C:\Users\mr200\Documents\GitHub\NTE-MusicSwapper\NTE Music Swapper\bin\Release\net8.0-windows\Microsoft.Bcl.Memory.dll
+C:\Users\mr200\Documents\GitHub\NTE-MusicSwapper\NTE Music Swapper\bin\Release\net8.0-windows\Microsoft.NET.StringTools.dll
+C:\Users\mr200\Documents\GitHub\NTE-MusicSwapper\NTE Music Swapper\bin\Release\net8.0-windows\NAudio.Core.dll
+C:\Users\mr200\Documents\GitHub\NTE-MusicSwapper\NTE Music Swapper\bin\Release\net8.0-windows\Newtonsoft.Json.dll
+C:\Users\mr200\Documents\GitHub\NTE-MusicSwapper\NTE Music Swapper\bin\Release\net8.0-windows\OffiUtils.dll
+C:\Users\mr200\Documents\GitHub\NTE-MusicSwapper\NTE Music Swapper\bin\Release\net8.0-windows\OggVorbisEncoder.dll
+C:\Users\mr200\Documents\GitHub\NTE-MusicSwapper\NTE Music Swapper\bin\Release\net8.0-windows\Oodle.NET.dll
+C:\Users\mr200\Documents\GitHub\NTE-MusicSwapper\NTE Music Swapper\bin\Release\net8.0-windows\Serilog.dll
+C:\Users\mr200\Documents\GitHub\NTE-MusicSwapper\NTE Music Swapper\bin\Release\net8.0-windows\Serilog.Sinks.Console.dll
+C:\Users\mr200\Documents\GitHub\NTE-MusicSwapper\NTE Music Swapper\bin\Release\net8.0-windows\SharpGLTF.Core.dll
+C:\Users\mr200\Documents\GitHub\NTE-MusicSwapper\NTE Music Swapper\bin\Release\net8.0-windows\SharpGLTF.Toolkit.dll
+C:\Users\mr200\Documents\GitHub\NTE-MusicSwapper\NTE Music Swapper\bin\Release\net8.0-windows\SixLabors.ImageSharp.dll
+C:\Users\mr200\Documents\GitHub\NTE-MusicSwapper\NTE Music Swapper\bin\Release\net8.0-windows\SkiaSharp.dll
+C:\Users\mr200\Documents\GitHub\NTE-MusicSwapper\NTE Music Swapper\bin\Release\net8.0-windows\SubstreamSharp.dll
+C:\Users\mr200\Documents\GitHub\NTE-MusicSwapper\NTE Music Swapper\bin\Release\net8.0-windows\System.IO.Hashing.dll
+C:\Users\mr200\Documents\GitHub\NTE-MusicSwapper\NTE Music Swapper\bin\Release\net8.0-windows\System.IO.Pipelines.dll
+C:\Users\mr200\Documents\GitHub\NTE-MusicSwapper\NTE Music Swapper\bin\Release\net8.0-windows\System.Text.Encodings.Web.dll
+C:\Users\mr200\Documents\GitHub\NTE-MusicSwapper\NTE Music Swapper\bin\Release\net8.0-windows\System.Text.Json.dll
+C:\Users\mr200\Documents\GitHub\NTE-MusicSwapper\NTE Music Swapper\bin\Release\net8.0-windows\VGAudio.dll
+C:\Users\mr200\Documents\GitHub\NTE-MusicSwapper\NTE Music Swapper\bin\Release\net8.0-windows\Zlib-ng.NET.dll
+C:\Users\mr200\Documents\GitHub\NTE-MusicSwapper\NTE Music Swapper\bin\Release\net8.0-windows\ZstdSharp.dll
+C:\Users\mr200\Documents\GitHub\NTE-MusicSwapper\NTE Music Swapper\bin\Release\net8.0-windows\runtimes\linux-arm\native\libblake3_dotnet.so
+C:\Users\mr200\Documents\GitHub\NTE-MusicSwapper\NTE Music Swapper\bin\Release\net8.0-windows\runtimes\linux-arm64\native\libblake3_dotnet.so
+C:\Users\mr200\Documents\GitHub\NTE-MusicSwapper\NTE Music Swapper\bin\Release\net8.0-windows\runtimes\linux-x64\native\libblake3_dotnet.so
+C:\Users\mr200\Documents\GitHub\NTE-MusicSwapper\NTE Music Swapper\bin\Release\net8.0-windows\runtimes\osx-arm64\native\libblake3_dotnet.dylib
+C:\Users\mr200\Documents\GitHub\NTE-MusicSwapper\NTE Music Swapper\bin\Release\net8.0-windows\runtimes\osx-x64\native\libblake3_dotnet.dylib
+C:\Users\mr200\Documents\GitHub\NTE-MusicSwapper\NTE Music Swapper\bin\Release\net8.0-windows\runtimes\win-arm64\native\blake3_dotnet.dll
+C:\Users\mr200\Documents\GitHub\NTE-MusicSwapper\NTE Music Swapper\bin\Release\net8.0-windows\runtimes\win-x64\native\blake3_dotnet.dll
+C:\Users\mr200\Documents\GitHub\NTE-MusicSwapper\NTE Music Swapper\bin\Release\net8.0-windows\runtimes\win-x86\native\blake3_dotnet.dll
+C:\Users\mr200\Documents\GitHub\NTE-MusicSwapper\NTE Music Swapper\bin\Release\net8.0-windows\runtimes\osx\native\libSkiaSharp.dylib
+C:\Users\mr200\Documents\GitHub\NTE-MusicSwapper\NTE Music Swapper\bin\Release\net8.0-windows\runtimes\win-arm64\native\libSkiaSharp.dll
+C:\Users\mr200\Documents\GitHub\NTE-MusicSwapper\NTE Music Swapper\bin\Release\net8.0-windows\runtimes\win-arm64\native\libSkiaSharp.pdb
+C:\Users\mr200\Documents\GitHub\NTE-MusicSwapper\NTE Music Swapper\bin\Release\net8.0-windows\runtimes\win-x64\native\libSkiaSharp.dll
+C:\Users\mr200\Documents\GitHub\NTE-MusicSwapper\NTE Music Swapper\bin\Release\net8.0-windows\runtimes\win-x64\native\libSkiaSharp.pdb
+C:\Users\mr200\Documents\GitHub\NTE-MusicSwapper\NTE Music Swapper\bin\Release\net8.0-windows\runtimes\win-x86\native\libSkiaSharp.dll
+C:\Users\mr200\Documents\GitHub\NTE-MusicSwapper\NTE Music Swapper\bin\Release\net8.0-windows\runtimes\win-x86\native\libSkiaSharp.pdb
+C:\Users\mr200\Documents\GitHub\NTE-MusicSwapper\NTE Music Swapper\bin\Release\net8.0-windows\runtimes\browser\lib\net8.0\System.Text.Encodings.Web.dll
+C:\Users\mr200\Documents\GitHub\NTE-MusicSwapper\NTE Music Swapper\bin\Release\net8.0-windows\CUE4Parse-Conversion.dll
+C:\Users\mr200\Documents\GitHub\NTE-MusicSwapper\NTE Music Swapper\bin\Release\net8.0-windows\CUE4Parse.dll
+C:\Users\mr200\Documents\GitHub\NTE-MusicSwapper\NTE Music Swapper\bin\Release\net8.0-windows\CUE4Parse-Conversion.pdb
+C:\Users\mr200\Documents\GitHub\NTE-MusicSwapper\NTE Music Swapper\bin\Release\net8.0-windows\CUE4Parse.pdb
+C:\Users\mr200\Documents\GitHub\NTE-MusicSwapper\NTE Music Swapper\obj\Release\net8.0-windows\NTE Music Swapper.csproj.AssemblyReference.cache
+C:\Users\mr200\Documents\GitHub\NTE-MusicSwapper\NTE Music Swapper\obj\Release\net8.0-windows\LoadingWindow.baml
+C:\Users\mr200\Documents\GitHub\NTE-MusicSwapper\NTE Music Swapper\obj\Release\net8.0-windows\MainWindow.baml
+C:\Users\mr200\Documents\GitHub\NTE-MusicSwapper\NTE Music Swapper\obj\Release\net8.0-windows\LoadingWindow.g.cs
+C:\Users\mr200\Documents\GitHub\NTE-MusicSwapper\NTE Music Swapper\obj\Release\net8.0-windows\MainWindow.g.cs
+C:\Users\mr200\Documents\GitHub\NTE-MusicSwapper\NTE Music Swapper\obj\Release\net8.0-windows\App.g.cs
+C:\Users\mr200\Documents\GitHub\NTE-MusicSwapper\NTE Music Swapper\obj\Release\net8.0-windows\NTE Music Swapper_Content.g.cs
+C:\Users\mr200\Documents\GitHub\NTE-MusicSwapper\NTE Music Swapper\obj\Release\net8.0-windows\NTE Music Swapper_MarkupCompile.cache
+C:\Users\mr200\Documents\GitHub\NTE-MusicSwapper\NTE Music Swapper\obj\Release\net8.0-windows\NTE Music Swapper.g.resources
+C:\Users\mr200\Documents\GitHub\NTE-MusicSwapper\NTE Music Swapper\obj\Release\net8.0-windows\NTE Music Swapper.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\mr200\Documents\GitHub\NTE-MusicSwapper\NTE Music Swapper\obj\Release\net8.0-windows\NTE Music Swapper.AssemblyInfoInputs.cache
+C:\Users\mr200\Documents\GitHub\NTE-MusicSwapper\NTE Music Swapper\obj\Release\net8.0-windows\NTE Music Swapper.AssemblyInfo.cs
+C:\Users\mr200\Documents\GitHub\NTE-MusicSwapper\NTE Music Swapper\obj\Release\net8.0-windows\NTE Music Swapper.csproj.CoreCompileInputs.cache
+C:\Users\mr200\Documents\GitHub\NTE-MusicSwapper\NTE Music Swapper\obj\Release\net8.0-windows\NTE Music Swapper.sourcelink.json
+C:\Users\mr200\Documents\GitHub\NTE-MusicSwapper\NTE Music Swapper\obj\Release\net8.0-windows\NTE Musi.70068E94.Up2Date
+C:\Users\mr200\Documents\GitHub\NTE-MusicSwapper\NTE Music Swapper\obj\Release\net8.0-windows\NTE Music Swapper.dll
+C:\Users\mr200\Documents\GitHub\NTE-MusicSwapper\NTE Music Swapper\obj\Release\net8.0-windows\refint\NTE Music Swapper.dll
+C:\Users\mr200\Documents\GitHub\NTE-MusicSwapper\NTE Music Swapper\obj\Release\net8.0-windows\NTE Music Swapper.pdb
+C:\Users\mr200\Documents\GitHub\NTE-MusicSwapper\NTE Music Swapper\obj\Release\net8.0-windows\NTE Music Swapper.genruntimeconfig.cache
+C:\Users\mr200\Documents\GitHub\NTE-MusicSwapper\NTE Music Swapper\obj\Release\net8.0-windows\ref\NTE Music Swapper.dll

@@ -1,0 +1,9 @@
+﻿<Application x:Class="NTE_Music_Swapper.App"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:local="clr-namespace:NTE_Music_Swapper"
+             >
+    <Application.Resources>
+         
+    </Application.Resources>
+</Application>

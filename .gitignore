@@ -1,0 +1,11 @@
+.vs/
+NTE\ Music\ Swapper/bin/
+!NTE\ Music\ Swapper/bin/Release/
+!NTE\ Music\ Swapper/bin/Release/net8.0-windows/
+NTE\ Music\ Swapper/bin/Release/net8.0-windows/*
+!NTE\ Music\ Swapper/bin/Release/net8.0-windows/ffmpeg/
+!NTE\ Music\ Swapper/bin/Release/net8.0-windows/Images/
+!NTE\ Music\ Swapper/bin/Release/net8.0-windows/runtimes/
+!NTE\ Music\ Swapper/bin/Release/net8.0-windows/UnrealPak/
+!NTE\ Music\ Swapper/bin/Release/net8.0-windows/Wwise/
+CUE4Parse-master/
