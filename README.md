@@ -1,4 +1,4 @@
-# NTE MusicSwapper
+# NTE Music Swapper
 This tool allows you to use your own audio files (WAV, MP3, OGG) as in-game radio music.
 https://ayakamods.com/mods/nte-music-swapper.2417/
 
