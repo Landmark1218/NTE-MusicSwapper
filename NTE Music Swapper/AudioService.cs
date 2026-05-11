@@ -7,6 +7,8 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
+using YoutubeExplode;
+using YoutubeExplode.Converter;
 
 namespace NtePakTool
 {
@@ -119,6 +121,44 @@ namespace NtePakTool
 
             if (!success || !File.Exists(outputWav))
                 throw new Exception($"ffmpeg exited with error:\n{errorOutput}");
+
+            return outputWav;
+        }
+
+        //YouTube音声ダウンロード
+        public async Task<string> DownloadFromYouTubeAsync(string videoUrl)
+        {
+            string ffmpegLocal = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "ffmpeg", "ffmpeg.exe");
+
+            if (!File.Exists(ffmpegLocal))
+                throw new FileNotFoundException(
+                    $"ffmpeg.exe could not be found. Please place it in the following location:\n{ffmpegLocal}");
+
+            string cacheDir = Path.Combine(Path.GetTempPath(), "NteWavCache");
+            Directory.CreateDirectory(cacheDir);
+
+            var youtube = new YoutubeClient();
+
+            log("YouTube: Retrieving video information...");
+            var video = await youtube.Videos.GetAsync(videoUrl);
+            log($"YouTube: Title: {video.Title} / Duration: {video.Duration}");
+
+            // Use URL hash as filename and reuse if cached
+            string safeId = Math.Abs(videoUrl.GetHashCode()).ToString();
+            string outputWav = Path.Combine(cacheDir, $"yt_{safeId}.wav");
+
+            if (!File.Exists(outputWav))
+            {
+                log("YouTube: Downloading audio and converting to WAV...");
+                await youtube.Videos.DownloadAsync(videoUrl, outputWav, builder => builder
+                    .SetFFmpegPath(ffmpegLocal)
+                    .SetPreset(ConversionPreset.UltraFast));
+                log($"YouTube: Conversion complete → {Path.GetFileName(outputWav)}");
+            }
+            else
+            {
+                log($"YouTube: Using cached file → {Path.GetFileName(outputWav)}");
+            }
 
             return outputWav;
         }

@@ -24,7 +24,7 @@ namespace NtePakTool
         private bool _isClosingHandled = false;
         private AppSettingsJson appSettings = new AppSettingsJson();
         private readonly string settingsFilePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "app_settings.json");
-        private const string CurrentVersion = "1.4";
+        private const string CurrentVersion = "1.5";
         private bool isBuildingMod = false;
         //コンストラクタ / 初期化
         public MainWindow()
@@ -204,6 +204,7 @@ namespace NtePakTool
             catch (Exception ex) { Log("Settings Load Error: " + ex.Message); }
 
             ChkSaveMod.IsChecked = appSettings.SaveModEnabled;
+            ChkUseYouTube.IsChecked = appSettings.UseYouTubeLink;
         }
 
         private void SaveSettings()
@@ -264,40 +265,83 @@ namespace NtePakTool
         {
             if (((FrameworkElement)sender).DataContext is WemItemBase item)
             {
-                var ofd = new Microsoft.Win32.OpenFileDialog { Filter = "Audio Files|*.wav;*.mp3;*.ogg" };
-                if (ofd.ShowDialog() != true) return;
-
-                string selectedPath = ofd.FileName;
-                string ext = Path.GetExtension(selectedPath).ToLowerInvariant();
-
-                if (ext == ".wav")
+                if (appSettings.UseYouTubeLink)
                 {
-                    item.SourceAudioPath = selectedPath;
-                    item.IsSelected = true;
-                }
-                else
-                {
-                    Log($"Non-WAV file detected ({ext}). Converting to WAV in background...");
-                    item.SourceAudioPath = "Converting... please wait";
+                    // YouTube URL入力ダイアログを表示
+                    var dialog = new YouTubeInputWindow { Owner = this };
+                    if (dialog.ShowDialog() != true || string.IsNullOrWhiteSpace(dialog.YouTubeUrl))
+                        return;
+
+                    string url = dialog.YouTubeUrl.Trim();
+                    item.SourceAudioPath = "YouTube: Downloading... please wait";
                     item.IsSelected = false;
+                    BtnBuildMod.IsEnabled = false;
 
                     try
                     {
-                        string convertedWav = await audioService.ConvertToWavAsync(selectedPath);
+                        string convertedWav = await audioService.DownloadFromYouTubeAsync(url);
                         item.SourceAudioPath = convertedWav;
                         item.IsSelected = true;
-                        Log($"Conversion complete: {Path.GetFileName(convertedWav)}");
+                        Log($"YouTube download complete: {Path.GetFileName(convertedWav)}");
                     }
                     catch (Exception ex)
                     {
                         item.SourceAudioPath = "No file selected";
-                        Log($"WAV conversion failed: {ex.Message}");
+                        Log($"YouTube download failed: {ex.Message}");
                         System.Windows.MessageBox.Show(
-                            $"Failed to convert the audio file to WAV:\n{ex.Message}\n\nPlease convert it to WAV manually and try again.",
-                            "Conversion Error", MessageBoxButton.OK, MessageBoxImage.Warning);
+                            $"YouTubeからのダウンロードに失敗しました:\n{ex.Message}",
+                            "Download Error", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    }
+                    finally
+                    {
+                        BtnBuildMod.IsEnabled = true;
+                    }
+                }
+                else
+                {
+                    // 通常のファイル選択ダイアログ
+                    var ofd = new Microsoft.Win32.OpenFileDialog { Filter = "Audio Files|*.wav;*.mp3;*.ogg" };
+                    if (ofd.ShowDialog() != true) return;
+
+                    string selectedPath = ofd.FileName;
+                    string ext = Path.GetExtension(selectedPath).ToLowerInvariant();
+
+                    if (ext == ".wav")
+                    {
+                        item.SourceAudioPath = selectedPath;
+                        item.IsSelected = true;
+                    }
+                    else
+                    {
+                        Log($"Non-WAV file detected ({ext}). Converting to WAV in background...");
+                        item.SourceAudioPath = "Converting... please wait";
+                        item.IsSelected = false;
+
+                        try
+                        {
+                            string convertedWav = await audioService.ConvertToWavAsync(selectedPath);
+                            item.SourceAudioPath = convertedWav;
+                            item.IsSelected = true;
+                            Log($"Conversion complete: {Path.GetFileName(convertedWav)}");
+                        }
+                        catch (Exception ex)
+                        {
+                            item.SourceAudioPath = "No file selected";
+                            Log($"WAV conversion failed: {ex.Message}");
+                            System.Windows.MessageBox.Show(
+                                $"Failed to convert the audio file to WAV:\n{ex.Message}\n\nPlease convert it to WAV manually and try again.",
+                                "Conversion Error", MessageBoxButton.OK, MessageBoxImage.Warning);
+                        }
                     }
                 }
             }
+        }
+
+        private void ChkUseYouTube_Changed(object sender, RoutedEventArgs e)
+        {
+            appSettings.UseYouTubeLink = ChkUseYouTube.IsChecked == true;
+            SaveSettings();
+            Log($"Use YouTube Link: {(appSettings.UseYouTubeLink ? "ON" : "OFF")}");
         }
 
         private async void BuildPak_Click(object sender, RoutedEventArgs e)
