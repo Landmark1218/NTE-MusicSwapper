@@ -317,7 +317,7 @@ namespace NtePakTool
                 while (!IsLauncherWindowVisible("NTEGlobalGame")) await Task.Delay(100);
 
                 log("Bypass: Launcher window detected! Waiting 0.6s for mod injection...");
-                await Task.Delay(600);
+                await Task.Delay(1000);
 
                 if (File.Exists(modBakFile))
                 {
