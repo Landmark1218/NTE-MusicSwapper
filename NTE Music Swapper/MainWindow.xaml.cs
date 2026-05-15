@@ -26,14 +26,15 @@ namespace NtePakTool
         private readonly string settingsFilePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "app_settings.json");
         private const string CurrentVersion = "1.5";
         private bool isBuildingMod = false;
-        //コンストラクタ / 初期化
+        
+        //Constructor / Initialization
         public MainWindow()
         {
             InitializeComponent();
 
             unpackDir = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Unpak", "HT");
 
-            // WwiseConsoleの検出より前に設定を読み込み、キャッシュを活用できるようにする
+            // Load the settings before WwiseConsole detects them, allowing you to leverage the cache.
             LoadSettings();
 
             string wwiseConsolePath = DetectWwiseConsolePath();
@@ -54,7 +55,7 @@ namespace NtePakTool
             const string subPath = @"Authoring\x64\Release\bin\WwiseConsole.exe";
             string fallbackPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "WemTool", "WwiseConsole.exe");
 
-            // キャッシュされたパスが有効かチェック
+            // Check if the cached path is valid.
             if (!string.IsNullOrEmpty(appSettings.WwiseConsolePath) &&
                 File.Exists(appSettings.WwiseConsolePath))
             {
@@ -92,7 +93,7 @@ namespace NtePakTool
                 }
             }
 
-            // 有効なパスが見つかった場合はJSONに保存（フォールバックパスは保存しない）
+            // If a valid path is found, save it to JSON (do not save the fallback path).
             if (foundPath != null)
             {
                 appSettings.WwiseConsolePath = foundPath;
@@ -189,7 +190,7 @@ namespace NtePakTool
             InitMonitor();
         }
 
-        //設定のロードとセーブ
+        // Loading and saving settings
         private void LoadSettings()
         {
             try
@@ -217,7 +218,7 @@ namespace NtePakTool
             catch (Exception ex) { Log("Settings Save Error: " + ex.Message); }
         }
 
-        //モニター
+        //Monitor
         private void InitMonitor()
         {
             monitorTimer = new System.Timers.Timer(500);
@@ -251,7 +252,7 @@ namespace NtePakTool
             }
         }
 
-        // UIイベントハンドラ
+        // UI event handler
         private void RefreshList_Click(object sender, RoutedEventArgs e)
             => audioService.RefreshList(WemList);
 
@@ -267,7 +268,7 @@ namespace NtePakTool
             {
                 if (appSettings.UseYouTubeLink)
                 {
-                    // YouTube URL入力ダイアログを表示
+                    // Display YouTube URL input dialog
                     var dialog = new YouTubeInputWindow { Owner = this };
                     if (dialog.ShowDialog() != true || string.IsNullOrWhiteSpace(dialog.YouTubeUrl))
                         return;
@@ -289,7 +290,7 @@ namespace NtePakTool
                         item.SourceAudioPath = "No file selected";
                         Log($"YouTube download failed: {ex.Message}");
                         System.Windows.MessageBox.Show(
-                            $"YouTubeからのダウンロードに失敗しました:\n{ex.Message}",
+                            $"Download from YouTube failed.:\n{ex.Message}",
                             "Download Error", MessageBoxButton.OK, MessageBoxImage.Warning);
                     }
                     finally
@@ -299,7 +300,7 @@ namespace NtePakTool
                 }
                 else
                 {
-                    // 通常のファイル選択ダイアログ
+                    // Normal file selection dialog
                     var ofd = new Microsoft.Win32.OpenFileDialog { Filter = "Audio Files|*.wav;*.mp3;*.ogg" };
                     if (ofd.ShowDialog() != true) return;
 
@@ -358,7 +359,7 @@ namespace NtePakTool
                 return;
             }
 
-            // 【追加】ビルド中フラグをONにする
+            // Turn on the build flag.
             isBuildingMod = true;
 
             try
@@ -371,13 +372,13 @@ namespace NtePakTool
                         t.FullPath = actualFiles.OrderByDescending(p => p.Length).First();
                 }
 
-                // 1. HTGameが起動している場合は強制終了
+                // 1. If HTGame is running, force quit it.
                 if (gameService.IsProcessRunning("HTGame"))
                 {
                     Log("Build: HTGame is running. Forcing termination...");
                     gameService.KillProcessesContainingName("HTGame");
 
-                    // 終了するまで少し待機 (最大5秒)
+                    // Wait briefly until it finishes (up to 5 seconds)
                     int retryHt = 0;
                     while (gameService.IsProcessRunning("HTGame") && retryHt < 10)
                     {
@@ -386,7 +387,7 @@ namespace NtePakTool
                     }
                 }
 
-                // 2. NTEGlobalGameが起動していない場合は起動
+                // 2. If NTEGlobalGame is not running, start it.
                 if (!gameService.IsProcessRunning("NTEGlobalGame"))
                 {
                     if (!string.IsNullOrEmpty(gameService.LauncherPath) && File.Exists(gameService.LauncherPath))
@@ -411,10 +412,10 @@ namespace NtePakTool
                     }
                 }
 
-                // 3. NTEGlobalGameのウィンドウが確実に表示されるまで待機
+                // 3. Wait until the NTEGlobalGame window is clearly displayed.
                 Log("Build: Waiting for NTEGlobalGame window to appear...");
                 int waitCount = 0;
-                // 最大30秒(60回 x 500ms)待機する
+                // Wait for a maximum of 30 seconds (60 times x 500ms)
                 while (!gameService.IsLauncherWindowVisible("NTEGlobalGame") && waitCount < 60)
                 {
                     await Task.Delay(500);
@@ -429,14 +430,13 @@ namespace NtePakTool
                 }
 
                 Log("Build: Launcher window detected. Starting Pak build process...");
-                // ===============================================
 
-                // 音声変換・Pak化処理の開始
+                // Start of speech conversion and Pak formatting process.
                 await audioService.BuildModAsync(targets);
             }
             finally
             {
-                // 【追加】処理が完了（またはエラーで中断）したら、必ずフラグをOFFにする
+                // Once the process is complete (or interrupted due to an error), be sure to turn the flag OFF.
                 isBuildingMod = false;
             }
         }
@@ -449,7 +449,7 @@ namespace NtePakTool
 
         private async void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e)
         {
-            // 【追加】ビルド中は終了をブロックする
+            // Blocks termination during the build process.
             if (isBuildingMod)
             {
                 System.Windows.MessageBox.Show(
@@ -539,7 +539,7 @@ namespace NtePakTool
             }
         }
 
-        //ユーティリティ
+        //Utility
         private void Log(string m) =>
             Dispatcher.Invoke(() =>
             {
