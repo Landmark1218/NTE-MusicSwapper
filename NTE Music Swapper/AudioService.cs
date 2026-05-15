@@ -29,7 +29,7 @@ namespace NtePakTool
             this.wprojPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Wwise", "NTE.wproj");
         }
 
-        //WEMリスト操作
+        // WEM list operations
         public void RefreshList(ObservableCollection<WemMapItem> wemList)
         {
             if (!Directory.Exists(unpackDir)) return;
@@ -83,7 +83,7 @@ namespace NtePakTool
             catch (Exception ex) { log("Error loading UI config: " + ex.Message); }
         }
 
-        //音声変換
+        // Audio conversion
         public async Task<string> ConvertToWavAsync(string inputPath)
         {
             string ffmpegLocal = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "ffmpeg", "ffmpeg.exe");
@@ -125,7 +125,7 @@ namespace NtePakTool
             return outputWav;
         }
 
-        //YouTube音声ダウンロード
+        // YouTube audio download
         public async Task<string> DownloadFromYouTubeAsync(string videoUrl)
         {
             string ffmpegLocal = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "ffmpeg", "ffmpeg.exe");
@@ -163,7 +163,7 @@ namespace NtePakTool
             return outputWav;
         }
 
-        //MODビルド
+        // MOD build
         public async Task BuildModAsync(List<WemItemBase> targets)
         {
             string exeDir = AppDomain.CurrentDomain.BaseDirectory;
