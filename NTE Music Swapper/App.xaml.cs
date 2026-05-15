@@ -8,13 +8,13 @@ namespace NTE_Music_Swapper
         {
             base.OnStartup(e);
 
-            // ロード画面を最初のウィンドウとして表示し、
-            // 検証完了後に MainWindow へ引き渡す
+            // Display the loading screen as the initial window
+            // then hand over to MainWindow after validation is complete
             var loading = new NtePakTool.LoadingWindow();
             MainWindow = loading;
             loading.Show();
 
-            // 非同期で検証 → MainWindow 起動
+            // Run validation asynchronously → then launch MainWindow
             _ = loading.RunAndHandOffAsync();
         }
     }
