@@ -12,9 +12,7 @@ namespace NtePakTool
             InitializeComponent();
         }
 
-        /// <summary>
-        /// 進捗を UI スレッドへ安全に反映する
-        /// </summary>
+        // Safely update progress on the UI thread
         public void SetProgress(VerifierProgressArgs args)
         {
             Dispatcher.Invoke(() =>
@@ -26,9 +24,7 @@ namespace NtePakTool
             });
         }
 
-        /// <summary>
-        /// AssetVerifier を実行し、完了後に MainWindow を表示して自身を閉じる
-        /// </summary>
+        // Run AssetVerifier, then display MainWindow and close itself once completed
         public async Task RunAndHandOffAsync()
         {
             string unpackHtDir = System.IO.Path.Combine(
