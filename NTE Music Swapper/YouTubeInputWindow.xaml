@@ -43,7 +43,7 @@
                  VerticalContentAlignment="Center"
                  KeyDown="TxtUrl_KeyDown"/>
 
-        <TextBlock Grid.Row="2" Text="例: https://www.youtube.com/watch?v=XXXXXXXXXXX"
+        <TextBlock Grid.Row="2" Text="Ex: https://www.youtube.com/watch?v=XXXXXXXXXXX"
                    Foreground="#666" FontSize="10" Margin="0,4,0,12"/>
 
         <StackPanel Grid.Row="3" Orientation="Horizontal" HorizontalAlignment="Right">
