@@ -33,7 +33,7 @@ namespace NtePakTool
             try
             {
                 using var hc = new HttpClient();
-                hc.Timeout = TimeSpan.FromSeconds(5); // 起動が遅くならないよう5秒でタイムアウトさせる
+                hc.Timeout = TimeSpan.FromSeconds(5); // Timeout after 5 seconds to avoid slow startup
                 var json = await hc.GetStringAsync(VersionUrl);
                 using var doc = JsonDocument.Parse(json);
                 return doc.RootElement.GetProperty("LatestVersion").GetString() ?? "0.0";
@@ -41,14 +41,14 @@ namespace NtePakTool
             catch (Exception ex)
             {
                 log("Version Check Error: " + ex.Message);
-                return "0.0"; // オフライン時などはエラーにせず0.0を返してチェックをスキップさせる
+                return "0.0"; // Return 0.0 on failure (e.g. offline) to skip the version check without error
             }
         }
 
-        //ゲーム検出
+        // Game detection
         public async Task DetectGameRootAsync(AppSettingsJson appSettings, Action saveSettingsCallback)
         {
-            // キャッシュされたパスが有効かチェック
+            // Check if the cached path is still valid
             if (!string.IsNullOrEmpty(appSettings.GameRootDir) &&
                 Directory.Exists(appSettings.GameRootDir) &&
                 File.Exists(Path.Combine(appSettings.GameRootDir, "NTEGlobalLauncher.exe")))
@@ -58,7 +58,7 @@ namespace NtePakTool
             }
             else
             {
-                // キャッシュがない or 無効なので全ドライブをスキャン
+                // No cache or cache is invalid — scan all drives
                 log("Scanning drives for Neverness To Everness folder (Fast Search)...");
                 GameRootDir = await Task.Run(() => PerformFastGameSearch());
 
@@ -70,7 +70,7 @@ namespace NtePakTool
 
                 log($"SUCCESS: Auto-detected game root at: {GameRootDir}");
 
-                // 検出結果をJSONに保存
+                // Save detection result to JSON
                 appSettings.GameRootDir = GameRootDir;
                 saveSettingsCallback?.Invoke();
                 log("Cache: Game root path saved to settings.");
@@ -132,8 +132,8 @@ namespace NtePakTool
             return string.Empty;
         }
 
-        //PAK操作
-        // 引数に Action saveSettingsCallback を追加
+        // PAK operations
+        // Added Action saveSettingsCallback parameter
         public async Task CheckAndStartLauncherOnStartupAsync(AppSettingsJson appSettings, Action saveSettingsCallback)
         {
             if (string.IsNullOrEmpty(OutputDir) || !Directory.Exists(OutputDir)) return;
@@ -153,24 +153,25 @@ namespace NtePakTool
                     long modPakSize = File.Exists(modBakFile) ? new FileInfo(modBakFile).Length : 0;
                     bool isBackupMissing = !File.Exists(bakFile);
 
-                    // 【安全装置】現在のpakサイズが保存されているMODのサイズと完全に一致する場合、
-                    // 前回異常終了等でMODが解除されずに残ってしまった可能性が高いため、バックアップ更新をスキップしてクリーンな状態に復元する
+                    // [Safety guard] If the current PAK size exactly matches the saved MOD size,
+                    // it is likely that the MOD was not removed due to an abnormal exit last time.
+                    // Skip updating the backup and restore to a clean state instead.
                     if (appSettings.OriginalPakSize > 0 && currentPakSize == modPakSize && currentPakSize != appSettings.OriginalPakSize)
                     {
-                        log("Warning: paksフォルダのファイルがMODの残骸である可能性を検出しました。クリーンなバックアップの上書きを防止します。");
+                        log("Warning: The file in the paks folder may be a MOD remnant. Preventing overwrite of the clean backup.");
                         if (!isBackupMissing)
                         {
                             File.Copy(bakFile, originalPak, true);
-                            currentPakSize = new FileInfo(originalPak).Length; // 復元後にサイズを再取得
-                            log("Startup: MODの残骸を削除し、バックアップから正規のPAKを復元しました。");
+                            currentPakSize = new FileInfo(originalPak).Length; // Re-fetch size after restoration
+                            log("Startup: Removed MOD remnant and restored the original PAK from backup.");
                         }
                     }
 
-                    // bakフォルダにあるバックアップファイルのサイズを取得
+                    // Get the size of the backup file in the bak folder
                     long bakFileSize = isBackupMissing ? 0 : new FileInfo(bakFile).Length;
 
-                    // 【アップデート判定】
-                    // paksのpakサイズとbakのbakサイズが異なる場合、またはJSONの記録サイズと異なる場合
+                    // [Update detection]
+                    // Triggered when the PAK size in paks differs from the .bak size, or differs from the size recorded in JSON
                     bool isGameUpdated = false;
                     if (!isBackupMissing && currentPakSize != bakFileSize)
                     {
@@ -187,7 +188,7 @@ namespace NtePakTool
                         {
                             log($"Startup: Game update detected! (Current: {currentPakSize}, Backup: {bakFileSize})");
 
-                            // 【追加】アップデートを検知した場合、modsフォルダの古いバックアップを削除する
+                            // [Added] When an update is detected, delete the outdated backup from the mods folder
                             if (File.Exists(modBakFile))
                             {
                                 File.Delete(modBakFile);
@@ -206,10 +207,10 @@ namespace NtePakTool
                             log("Startup: Creating original PAK backup...");
                         }
 
-                        // バックアップを作成（または上書き）
+                        // Create (or overwrite) the backup
                         File.Copy(originalPak, bakFile, true);
 
-                        // JSONのサイズ情報を更新して保存
+                        // Update and save the size info in JSON
                         appSettings.OriginalPakSize = currentPakSize;
                         saveSettingsCallback?.Invoke();
 
@@ -267,7 +268,7 @@ namespace NtePakTool
                 string modBakFile = Path.Combine(OutputDir, "mods", "pakchunk3-Windows.pak.bak");
                 string pakPath = Path.Combine(paksDir, "pakchunk3-Windows.pak");
 
-                //異常な名前のファイルを修復
+                // Repair files with abnormal names
                 try
                 {
                     var weirdFiles = Directory.GetFiles(paksDir, "pakchunk3-Windows.pak*")
@@ -275,15 +276,15 @@ namespace NtePakTool
 
                     foreach (var weirdFile in weirdFiles)
                     {
-                        log($"異常な名前のファイルを発見しました: {Path.GetFileName(weirdFile)}");
+                        log($"Found a file with an abnormal name: {Path.GetFileName(weirdFile)}");
                         if (File.Exists(pakPath)) File.Delete(pakPath);
                         File.Move(weirdFile, pakPath);
-                        log($"-> 正常な拡張子 ({Path.GetFileName(pakPath)}) に修復しました。");
+                        log($"-> Repaired to correct extension ({Path.GetFileName(pakPath)}).");
                     }
                 }
                 catch (Exception ex)
                 {
-                    log("ファイル名の修復中にエラーが発生しました: " + ex.Message);
+                    log("An error occurred while repairing the filename: " + ex.Message);
                 }
 
                 if (File.Exists(pakPath))
@@ -386,7 +387,7 @@ namespace NtePakTool
             return Convert.ToBase64String(bytes);
         }
 
-        //プロセス管理
+        // Process management
         public bool IsProcessRunning(string keyword) =>
             Process.GetProcesses().Any(p => p.ProcessName.IndexOf(keyword, StringComparison.OrdinalIgnoreCase) >= 0);
 
@@ -427,7 +428,7 @@ namespace NtePakTool
             return false;
         }
 
-        //ユーティリティ
+        // Utilities
         public Task RunProcessAsync(string exe, string arg)
         {
             var tcs = new TaskCompletionSource<bool>();
