@@ -33,7 +33,6 @@
                        FontSize="11"
                        HorizontalAlignment="Center"/>
 
-            <!-- WPF標準のProgressBar（シンプルに使う） -->
             <ProgressBar Grid.Row="4"
                          x:Name="PBar"
                          Height="14"
