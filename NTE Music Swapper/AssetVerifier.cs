@@ -41,23 +41,23 @@ namespace NtePakTool
         }
 
         // ─────────────────────────────────────────────
-        // 公開エントリポイント
+        // Public entry point
         // ─────────────────────────────────────────────
         public async Task RunAsync(CancellationToken ct = default)
         {
             Report("Loading settings...", 0.00);
 
-            // 1. AES.json 取得
+            // 1. Fetch AES.json
             var (aesKey, usmapUrl) = await FetchAesConfigAsync(ct);
 
-            // 2. Oodle 初期化
+            // 2. Initialize Oodle
             Report("Initializing Oodle...", 0.03);
             await OodleHelper.InitializeAsync(cancellationToken: ct);
 
-            // 3. usmap ダウンロード（一時ファイル）
+            // 3. Download usmap (temporary file)
             string usmapPath = await DownloadUsmapAsync(usmapUrl, ct);
 
-            // 4. ゲームの PAK を探す
+            // 4. Search for game PAK files
             Report("Searching for PAK files...", 0.08);
             string pakPath = FindPakPath();
             if (string.IsNullOrEmpty(pakPath))
@@ -94,7 +94,7 @@ namespace NtePakTool
                 }
 
                 Report($"Extracting {missing.Count:N0} missing assets...", 0.22);
-                // 8. 不足分のみ並列抽出
+                // 8. Extract only missing files in parallel
                 int done = 0;
                 int total = missing.Count;
 
@@ -124,7 +124,7 @@ namespace NtePakTool
                                     WriteFile(gameFile.Path, data);
                                 }
                             }
-                            catch { /* 個別失敗は無視して続行 */ }
+                            catch { /* Ignore individual failures and continue */ }
 
                             int current = Interlocked.Increment(ref done);
                             double pct = 0.22 + (double)current / total * 0.78;
@@ -142,14 +142,14 @@ namespace NtePakTool
                 if (Directory.Exists(tempDir))
                     Directory.Delete(tempDir, recursive: true);
 
-                // usmap 一時ファイルを削除
+                // Delete usmap temporary file
                 if (File.Exists(usmapPath))
                     File.Delete(usmapPath);
             }
         }
 
         // ─────────────────────────────────────────────
-        // 内部ヘルパー
+        // Internal helpers
         // ─────────────────────────────────────────────
 
         private async Task<(string aesKey, string usmapUrl)> FetchAesConfigAsync(CancellationToken ct)
@@ -177,20 +177,20 @@ namespace NtePakTool
                 var bytes = await hc.GetByteArrayAsync(url, ct);
                 await File.WriteAllBytesAsync(path, bytes, ct);
             }
-            catch { /* usmap なしでも続行 */ }
+            catch { /* Continue even without usmap */ }
             return path;
         }
 
         private static string FindPakPath()
         {
-            // ゲームの標準インストール先から pakchunk3 を探す
+            // Search for pakchunk3 from the game's standard installation directory
             var drives = DriveInfo.GetDrives()
                 .Where(d => d.IsReady && d.DriveType == DriveType.Fixed)
                 .Select(d => d.RootDirectory.FullName);
 
             foreach (var drive in drives)
             {
-                // 候補パターン
+                // Candidate patterns
                 var candidates = new[]
                 {
                     Path.Combine(drive, "Neverness To Everness", "Client",
@@ -199,7 +199,7 @@ namespace NtePakTool
                 foreach (var c in candidates)
                     if (File.Exists(c)) return c;
 
-                // 見つからなければ BFS で探す
+                // If not found, search via BFS
                 var skipFolders = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
                     { "Windows", "ProgramData", "$RECYCLE.BIN", "AppData", "Recovery" };
 
@@ -243,20 +243,18 @@ namespace NtePakTool
             provider.SubmitKey(new FGuid(), new FAesKey(aesKey));
             return provider;
         }
-
-        /// <summary>
-        /// PAK の仮想パス一覧と Unpak フォルダを比較し、不足しているものを返す
-        /// </summary>
+        
+        /// Compares the virtual path list from the PAK against the Unpak folder and returns any missing entries
         private List<KeyValuePair<string, CUE4Parse.FileProvider.Objects.GameFile>> GetMissingFiles(
             IEnumerable<KeyValuePair<string, CUE4Parse.FileProvider.Objects.GameFile>> allFiles)
         {
-            // Unpak/HT 配下の既存ファイルを小文字で収集
+            // Collect existing files under Unpak/HT in lowercase
             var existing = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
             if (Directory.Exists(_unpackHtDir))
             {
                 foreach (var f in Directory.GetFiles(_unpackHtDir, "*", SearchOption.AllDirectories))
                 {
-                    // 仮想パス形式 "HT/Content/..." に変換
+                    // Convert to virtual path format "HT/Content/..."
                     string rel = f.Substring(_unpackHtDir.Length - "HT".Length)
                                   .Replace(Path.DirectorySeparatorChar, '/');
                     existing.Add(rel.TrimStart('/'));
@@ -266,8 +264,8 @@ namespace NtePakTool
             return allFiles
                 .Where(kv =>
                 {
-                    string vp = kv.Key; // 例: "HT/Content/WwiseAudio/Media/123.wem"
-                    // uasset の場合は uexp も同時に書き出されるので uasset キーだけで判定
+                    string vp = kv.Key; // e.g. "HT/Content/WwiseAudio/Media/123.wem"
+                    // For uasset files, uexp is written out at the same time, so only check by uasset key
                     return !existing.Contains(vp);
                 })
                 .ToList();
@@ -276,10 +274,10 @@ namespace NtePakTool
         private void WriteFile(string virtualPath, byte[] data)
         {
             // virtualPath: "HT/Content/..." → Unpak/HT/Content/...
-            //   _unpackHtDir = "...Unpak/HT" なので HT を除いた部分を結合
+            //   _unpackHtDir = "...Unpak/HT", so combine after stripping the HT portion
             string rel = virtualPath.Replace('/', Path.DirectorySeparatorChar);
 
-            // 仮想パスは "HT\Content\..." で始まるので先頭の "HT\" を除去して結合
+            // Virtual path starts with "HT\Content\...", so strip the leading "HT\" before combining
             if (rel.StartsWith("HT" + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase))
                 rel = rel.Substring(3);
 
