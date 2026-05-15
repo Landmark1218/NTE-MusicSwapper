@@ -42,7 +42,7 @@
         <TextBlock Grid.Row="0" Text="NTE Music Swapper" Foreground="White" FontSize="18"
                    FontWeight="Bold" HorizontalAlignment="Center"/>
 
-        <!-- 検索バー -->
+        <!-- Search bar -->
         <Grid Grid.Row="1" Margin="0,8,0,0">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="Auto"/>
@@ -52,7 +52,7 @@
             <TextBox x:Name="TxtSearch" Grid.Column="1" Height="22" FontSize="11" TextChanged="TxtSearch_TextChanged"/>
         </Grid>
 
-        <!-- タブコントロール -->
+        <!-- Tab control -->
         <TabControl Grid.Row="2" Background="Transparent" BorderThickness="0" Margin="0,8">
             <TabControl.Resources>
                 <Style TargetType="TabItem">
