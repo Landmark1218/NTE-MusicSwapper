@@ -65,7 +65,6 @@
                         <Trigger Property="IsSelected" Value="True">
                             <Setter Property="Background" Value="#007ACC"/>
                             <Setter Property="Foreground" Value="#00FF41"/>
-                            <!-- ヘッダ文字色を緑に統一して視認性を確保 -->
                         </Trigger>
                     </Style.Triggers>
                 </Style>
