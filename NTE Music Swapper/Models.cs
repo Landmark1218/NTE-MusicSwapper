@@ -2,7 +2,7 @@ using System.ComponentModel;
 
 namespace NtePakTool
 {
-    //共通のデータモデル
+    //Common data model
     public class WemItemBase : INotifyPropertyChanged
     {
         public string RelativePath { get; set; } = "";
@@ -33,14 +33,14 @@ namespace NtePakTool
         public string ImagePath { get; set; } = "";
     }
 
-    //UI設定のJSON用
+    //For UI settings JSON
     public class UiConfigJson
     {
         public string WemName { get; set; } = "";
         public string DisplayName { get; set; } = "";
         public string ImageName { get; set; } = "";
     }
-    //アプリ設定のJSON用
+    //For app settings JSON
     public class AppSettingsJson
     {
         public bool SaveModEnabled { get; set; } = true;
