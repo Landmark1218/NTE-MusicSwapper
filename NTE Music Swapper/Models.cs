@@ -48,5 +48,6 @@ namespace NtePakTool
         public string GameRootDir { get; set; } = "";
         public string WwiseConsolePath { get; set; } = "";
         public bool UseYouTubeLink { get; set; } = false;
+        public long ModSize { get; set; } = 0;
     }
 }
