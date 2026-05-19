@@ -418,6 +418,24 @@ namespace NtePakTool
 
                 Log("Build: Launcher window detected. Starting Pak build process...");
 
+                // sym_update : Fix bug where vanilla files disappear when rebuilding a mod when it is already built and properly applied.
+                // [Fix] 빌드를 시작하기 전에 게임을 순정(Vanilla) 상태로 강제 원상복구
+                string mainPakPath = Path.Combine(gameService.OutputDir, "pakchunk3-Windows.pak");
+                if (File.Exists(mainPakPath))
+                {
+                    await gameService.SafeRestoreVanillaAsync(mainPakPath, appSettings.ModSize);
+                }
+
+                if (!string.IsNullOrEmpty(gameService.PatchPaksDir))
+                {
+                    string patchPakPath = Path.Combine(gameService.PatchPaksDir, "pakchunk3-Windows_0_P.pak");
+                    if (File.Exists(patchPakPath))
+                    {
+                        await gameService.SafeRestoreVanillaAsync(patchPakPath, appSettings.PatchModSize);
+                    }
+                }
+                Log("Build: Pre-build cleanup completed. Restored to Vanilla state temporarily.");
+                
                 long newModSize = await audioService.BuildModAsync(targets);
                 if (newModSize > 0)
                 {
