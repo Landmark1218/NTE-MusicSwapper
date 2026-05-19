@@ -51,6 +51,9 @@
             <TextBlock Text="Search (.wem):" Foreground="White" VerticalAlignment="Center" Margin="0,0,8,0" FontSize="11"/>
             <TextBox x:Name="TxtSearch" Grid.Column="1" Height="22" FontSize="11" TextChanged="TxtSearch_TextChanged"/>
         </Grid>
+        <TextBlock Grid.RowSpan="5" HorizontalAlignment="Right" VerticalAlignment="Bottom"
+                   Margin="0,0,0,-8" Foreground="White" Opacity="0.6" FontSize="8"
+                   Text="@landmark_alt  @ddamgui" IsHitTestVisible="False"/>
 
         <!-- Tab control -->
         <TabControl Grid.Row="2" Background="Transparent" BorderThickness="0" Margin="0,8">
