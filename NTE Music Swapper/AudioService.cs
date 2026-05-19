@@ -162,9 +162,157 @@ namespace NtePakTool
 
             return outputWav;
         }
-
         // MOD build
-        public async Task BuildModAsync(List<WemItemBase> targets)
+        // sym_update : save mod size when mod build.
+        #region origin code
+
+        // public async Task BuildModAsync(List<WemItemBase> targets)
+        // {
+        //     string exeDir = AppDomain.CurrentDomain.BaseDirectory;
+        //     string wemBackupDir = Path.Combine(exeDir, "WemTempBak_" + DateTime.Now.Ticks);
+        //     var backupMap = new Dictionary<string, string>();
+        //
+        //     try
+        //     {
+        //         if (!File.Exists(wwiseConsolePath))
+        //         {
+        //             try
+        //             {
+        //                 Process.Start(new ProcessStartInfo
+        //                 {
+        //                     FileName = "https://www.audiokinetic.com/en/download-launcher/?platform=1",
+        //                     UseShellExecute = true
+        //                 });
+        //             }
+        //             catch (Exception ex) { log("Browser failed to launch: " + ex.Message); }
+        //
+        //             System.Windows.MessageBox.Show(
+        //                 "WwiseConsole.exe could not be found.\n\n" +
+        //                 "The Wwise Launcher download page has been opened automatically.\n" +
+        //                 "Please run the downloaded installer (exe) and\n" +
+        //                 "install version [ 2025.1.7.9143 ].",
+        //                 "Wwise Installation Required",
+        //                 MessageBoxButton.OK,
+        //                 MessageBoxImage.Information);
+        //             return;
+        //         }
+        //
+        //         log($"Build started: Converting {targets.Count} files...");
+        //
+        //         string tempDir = Path.Combine(Path.GetTempPath(), "NteWemTemp");
+        //         string audioWorkDir = Path.Combine(Path.GetTempPath(), "AudioWork");
+        //         if (Directory.Exists(tempDir)) Directory.Delete(tempDir, true);
+        //         if (Directory.Exists(audioWorkDir)) Directory.Delete(audioWorkDir, true);
+        //         Directory.CreateDirectory(tempDir);
+        //         Directory.CreateDirectory(audioWorkDir);
+        //
+        //         var xml = new StringBuilder(
+        //             "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+        //             "<ExternalSourcesList SchemaVersion=\"1\" Root=\"" + audioWorkDir + "\">\n");
+        //
+        //         foreach (var t in targets)
+        //         {
+        //             string targetName = Path.GetFileNameWithoutExtension(t.FullPath);
+        //             string renamedSource = Path.Combine(audioWorkDir, targetName + Path.GetExtension(t.SourceAudioPath));
+        //             File.Copy(t.SourceAudioPath, renamedSource, true);
+        //             xml.AppendLine($"<Source Path=\"{Path.GetFileName(renamedSource)}\" Conversion=\"Vorbis Quality High\"/>");
+        //         }
+        //         xml.AppendLine("</ExternalSourcesList>");
+        //
+        //         string wsources = Path.Combine(Path.GetTempPath(), "list.wsources");
+        //         File.WriteAllText(wsources, xml.ToString(), Encoding.UTF8);
+        //
+        //         await gameService.RunProcessAsync(wwiseConsolePath,
+        //             $"convert-external-source \"{wprojPath}\" --source-file \"{wsources}\" --output \"{tempDir}\"");
+        //
+        //         string windowsDir = Path.Combine(tempDir, "Windows");
+        //         if (Directory.Exists(windowsDir))
+        //         {
+        //             foreach (var file in Directory.GetFiles(windowsDir))
+        //             {
+        //                 string destFile = Path.Combine(tempDir, Path.GetFileName(file));
+        //                 if (File.Exists(destFile)) File.Delete(destFile);
+        //                 File.Move(file, destFile);
+        //             }
+        //             Directory.Delete(windowsDir, true);
+        //         }
+        //
+        //         foreach (var t in targets)
+        //         {
+        //             string expectedWem = Path.Combine(tempDir, Path.GetFileNameWithoutExtension(t.FullPath) + ".wem");
+        //             if (!File.Exists(expectedWem))
+        //                 throw new Exception($"File '{Path.GetFileName(t.FullPath)}' WEM conversion failed.");
+        //         }
+        //
+        //         log("Temporarily backing up the original WEM files...");
+        //         Directory.CreateDirectory(wemBackupDir);
+        //         foreach (var t in targets)
+        //         {
+        //             if (File.Exists(t.FullPath))
+        //             {
+        //                 string bkpPath = Path.Combine(wemBackupDir, Guid.NewGuid().ToString() + "_" + Path.GetFileName(t.FullPath));
+        //                 File.Move(t.FullPath, bkpPath);
+        //                 backupMap.Add(t.FullPath, bkpPath);
+        //             }
+        //         }
+        //
+        //         log("The MOD's WEM files are placed in the correct location.");
+        //         foreach (var t in targets)
+        //         {
+        //             string modWemPath = Path.Combine(tempDir, Path.GetFileNameWithoutExtension(t.FullPath) + ".wem");
+        //             if (File.Exists(modWemPath)) File.Copy(modWemPath, t.FullPath, true);
+        //         }
+        //
+        //         var strayWems = Directory.GetFiles(unpackDir, "*.wem", SearchOption.TopDirectoryOnly);
+        //         foreach (var stray in strayWems) { try { File.Delete(stray); } catch { } }
+        //
+        //         log("The Pak conversion process will begin...");
+        //         string base64Key = await gameService.GetAesKeyBase64Async();
+        //         await gameService.PackingProcess(base64Key);
+        //
+        //         log("Build complete!");
+        //         System.Windows.MessageBox.Show("Pak build complete!\nIf Auto-Save is ON, it will be applied automatically next time.");
+        //     }
+        //     catch (Exception ex)
+        //     {
+        //         log("Error: " + ex.Message);
+        //         System.Windows.MessageBox.Show($"An error occurred during the build:\n{ex.Message}\nRestoring original files.");
+        //     }
+        //     finally
+        //     {
+        //         if (Directory.Exists(wemBackupDir))
+        //         {
+        //             log("Deleting MOD files and restoring original files...");
+        //             foreach (var kvp in backupMap)
+        //             {
+        //                 string originalLocation = kvp.Key;
+        //                 string backupLocation = kvp.Value;
+        //                 bool restoreSuccess = false;
+        //                 int retryCount = 0;
+        //
+        //                 while (!restoreSuccess && retryCount < 10)
+        //                 {
+        //                     try
+        //                     {
+        //                         if (File.Exists(originalLocation)) File.Delete(originalLocation);
+        //                         if (File.Exists(backupLocation)) File.Move(backupLocation, originalLocation);
+        //                         restoreSuccess = true;
+        //                     }
+        //                     catch (IOException)
+        //                     {
+        //                         retryCount++;
+        //                         await Task.Delay(500);
+        //                     }
+        //                 }
+        //             }
+        //             try { Directory.Delete(wemBackupDir, true); } catch { }
+        //             log("Restoration process complete. The Unpak folder is now clean.");
+        //         }
+        //     }
+        // }
+
+        #endregion
+        public async Task<long> BuildModAsync(List<WemItemBase> targets)
         {
             string exeDir = AppDomain.CurrentDomain.BaseDirectory;
             string wemBackupDir = Path.Combine(exeDir, "WemTempBak_" + DateTime.Now.Ticks);
@@ -192,7 +340,7 @@ namespace NtePakTool
                         "Wwise Installation Required",
                         MessageBoxButton.OK,
                         MessageBoxImage.Information);
-                    return;
+                    return 0;
                 }
 
                 log($"Build started: Converting {targets.Count} files...");
@@ -266,10 +414,12 @@ namespace NtePakTool
 
                 log("The Pak conversion process will begin...");
                 string base64Key = await gameService.GetAesKeyBase64Async();
-                await gameService.PackingProcess(base64Key);
+                // [Fix] return modSize to MainWindow
+                long modSize = await gameService.PackingProcess(base64Key);
 
                 log("Build complete!");
                 System.Windows.MessageBox.Show("Pak build complete!\nIf Auto-Save is ON, it will be applied automatically next time.");
+                return modSize;
             }
             catch (Exception ex)
             {
@@ -307,6 +457,7 @@ namespace NtePakTool
                     log("Restoration process complete. The Unpak folder is now clean.");
                 }
             }
+            return 0;
         }
     }
 }
