@@ -24,7 +24,7 @@ namespace NtePakTool
         private bool _isClosingHandled = false;
         private AppSettingsJson appSettings = new AppSettingsJson();
         private readonly string settingsFilePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "app_settings.json");
-        private const string CurrentVersion = "1.6";
+        private const string CurrentVersion = "1.7";
         private bool isBuildingMod = false;
 
         public MainWindow()
