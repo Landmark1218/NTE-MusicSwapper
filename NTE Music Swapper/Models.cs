@@ -49,5 +49,6 @@ namespace NtePakTool
         public string WwiseConsolePath { get; set; } = "";
         public bool UseYouTubeLink { get; set; } = false;
         public long ModSize { get; set; } = 0;
+        public int ModApplyDelay { get; set; } = 1000;
     }
 }

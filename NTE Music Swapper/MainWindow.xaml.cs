@@ -226,6 +226,36 @@ namespace NtePakTool
             monitorTimer.Start();
         }
 
+        // sym_update : 
+        #region origin code
+
+        // private async void OnMonitorTick(object? sender, System.Timers.ElapsedEventArgs e)
+        // {
+        //     monitorTimer.Stop();
+        //     try
+        //     {
+        //         bool isHtCurrentlyRunning = gameService.IsProcessRunning("HTGame");
+        //
+        //         if (isHtRunningLastState && !isHtCurrentlyRunning && !isSwapping)
+        //         {
+        //             isSwapping = true;
+        //             Log("HTGame closed. Forcing Launcher termination...");
+        //
+        //             gameService.KillNteGlobalLauncher();
+        //             await Task.Delay(1000);
+        //             await gameService.PerformBypassSwap();
+        //
+        //             isSwapping = false;
+        //         }
+        //         isHtRunningLastState = isHtCurrentlyRunning;
+        //     }
+        //     finally
+        //     {
+        //         monitorTimer.Start();
+        //     }
+        // }
+
+        #endregion
         private async void OnMonitorTick(object? sender, System.Timers.ElapsedEventArgs e)
         {
             monitorTimer.Stop();
@@ -240,7 +270,28 @@ namespace NtePakTool
 
                     gameService.KillNteGlobalLauncher();
                     await Task.Delay(1000);
-                    await gameService.PerformBypassSwap();
+                    // [고친것] 런처를 다시 켜기 전에 반드시 '순정 상태'로 원상복구(Swap)를 하기
+                    // [Fix] Replace with vanilla files after the game is turned off and before the launcher starts.
+                    string pakPath = Path.Combine(gameService.OutputDir, "pakchunk3-Windows.pak");
+                    string modBakFile = Path.Combine(gameService.OutputDir, "mods", "pakchunk3-Windows.pak.bak");
+                    string tempPak = pakPath + ".tmp";
+            
+                    if (File.Exists(pakPath))
+                    {
+                        long currentPakSize = new FileInfo(pakPath).Length;
+                
+                        // 현재 게임 폴더에 모드가 들어있다면, 다시 순정으로 맞교환
+                        // If there are modfile in the current game folder, swap them back to the vanilla file.
+                        if (appSettings.ModSize > 0 && currentPakSize == appSettings.ModSize)
+                        {
+                            if (File.Exists(tempPak)) File.Delete(tempPak);
+                            File.Move(pakPath, tempPak);       // 1. 게임폴더(모드) -> 임시
+                            File.Move(modBakFile, pakPath);    // 2. mods(순정) -> 게임폴더 (순정 복구 완료!)
+                            File.Move(tempPak, modBakFile);    // 3. 임시(모드) -> mods
+                            Log("Monitor: Restored original files for safe Launcher restart.");
+                        }
+                    }
+                    await gameService.PerformBypassSwap(appSettings.ModApplyDelay);
 
                     isSwapping = false;
                 }
@@ -345,6 +396,106 @@ namespace NtePakTool
             Log($"Use YouTube Link: {(appSettings.UseYouTubeLink ? "ON" : "OFF")}");
         }
 
+        // sym_update : save mod size when mod build.
+        #region origin code
+
+        // private async void BuildPak_Click(object sender, RoutedEventArgs e)
+        // {
+        //     var targets = WemList.Where(x => x.IsSelected && File.Exists(x.SourceAudioPath)).Cast<WemItemBase>()
+        //         .Concat(UiWemList.Where(x => x.IsSelected && File.Exists(x.SourceAudioPath)).Cast<WemItemBase>())
+        //         .GroupBy(x => Path.GetFileName(x.RelativePath))
+        //         .Select(g => g.First())
+        //         .ToList();
+        //
+        //     if (!targets.Any())
+        //     {
+        //         System.Windows.MessageBox.Show("Please select an item and specify the audio file.");
+        //         return;
+        //     }
+        //
+        //     // Turn on the build flag.
+        //     isBuildingMod = true;
+        //
+        //     try
+        //     {
+        //         foreach (var t in targets)
+        //         {
+        //             string fileName = Path.GetFileName(t.RelativePath);
+        //             var actualFiles = Directory.GetFiles(unpackDir, fileName, SearchOption.AllDirectories);
+        //             if (actualFiles.Length > 0)
+        //                 t.FullPath = actualFiles.OrderByDescending(p => p.Length).First();
+        //         }
+        //
+        //         // 1. If HTGame is running, force quit it.
+        //         if (gameService.IsProcessRunning("HTGame"))
+        //         {
+        //             Log("Build: HTGame is running. Forcing termination...");
+        //             gameService.KillProcessesContainingName("HTGame");
+        //
+        //             // Wait briefly until it finishes (up to 5 seconds)
+        //             int retryHt = 0;
+        //             while (gameService.IsProcessRunning("HTGame") && retryHt < 10)
+        //             {
+        //                 await Task.Delay(500);
+        //                 retryHt++;
+        //             }
+        //         }
+        //
+        //         // 2. If NTEGlobalGame is not running, start it.
+        //         if (!gameService.IsProcessRunning("NTEGlobalGame"))
+        //         {
+        //             if (!string.IsNullOrEmpty(gameService.LauncherPath) && File.Exists(gameService.LauncherPath))
+        //             {
+        //                 Log("Build: Starting NTEGlobalGame...");
+        //                 try
+        //                 {
+        //                     Process.Start(new ProcessStartInfo(gameService.LauncherPath) { UseShellExecute = true });
+        //                 }
+        //                 catch (Exception ex)
+        //                 {
+        //                     Log("Build Launcher Start Error: " + ex.Message);
+        //                     System.Windows.MessageBox.Show($"Failed to start launcher:\n{ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+        //                     return;
+        //                 }
+        //             }
+        //             else
+        //             {
+        //                 Log("Build Error: Launcher path not found.");
+        //                 System.Windows.MessageBox.Show("Cannot find NTEGlobalLauncher.exe. Build aborted.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+        //                 return;
+        //             }
+        //         }
+        //
+        //         // 3. Wait until the NTEGlobalGame window is clearly displayed.
+        //         Log("Build: Waiting for NTEGlobalGame window to appear...");
+        //         int waitCount = 0;
+        //         // Wait for a maximum of 30 seconds (60 times x 500ms)
+        //         while (!gameService.IsLauncherWindowVisible("NTEGlobalGame") && waitCount < 60)
+        //         {
+        //             await Task.Delay(500);
+        //             waitCount++;
+        //         }
+        //
+        //         if (!gameService.IsLauncherWindowVisible("NTEGlobalGame"))
+        //         {
+        //             Log("Build Error: Timeout waiting for Launcher window.");
+        //             System.Windows.MessageBox.Show("Timed out waiting for the game window to appear.", "Timeout", MessageBoxButton.OK, MessageBoxImage.Warning);
+        //             return;
+        //         }
+        //
+        //         Log("Build: Launcher window detected. Starting Pak build process...");
+        //
+        //         // Start of speech conversion and Pak formatting process.
+        //         await audioService.BuildModAsync(targets);
+        //     }
+        //     finally
+        //     {
+        //         // Once the process is complete (or interrupted due to an error), be sure to turn the flag OFF.
+        //         isBuildingMod = false;
+        //     }
+        // }
+
+        #endregion
         private async void BuildPak_Click(object sender, RoutedEventArgs e)
         {
             var targets = WemList.Where(x => x.IsSelected && File.Exists(x.SourceAudioPath)).Cast<WemItemBase>()
@@ -432,7 +583,15 @@ namespace NtePakTool
                 Log("Build: Launcher window detected. Starting Pak build process...");
 
                 // Start of speech conversion and Pak formatting process.
-                await audioService.BuildModAsync(targets);
+                // [고친것] 리턴받은 modSize 대입하고 저장
+                // [Fix] Assign the returned modSize and save
+                long newModSize = await audioService.BuildModAsync(targets);
+                if (newModSize > 0)
+                {
+                    appSettings.ModSize = newModSize;
+                    SaveSettings();
+                    Log($"Settings: Mod Size saved successfully.");
+                }
             }
             finally
             {
@@ -483,36 +642,83 @@ namespace NtePakTool
                     retryCount++;
                 }
 
-                string bakFile = Path.Combine(gameService.OutputDir, "bak", "pakchunk3-Windows.pak.bak");
+                // sym_update : Replaced the file copy and paste function with a file move function.
+                #region origin code
+
+                // string bakFile = Path.Combine(gameService.OutputDir, "bak", "pakchunk3-Windows.pak.bak");
+                // string pakPath = Path.Combine(gameService.OutputDir, "pakchunk3-Windows.pak");
+                // string tempPak = pakPath + ".tmp";
+                // if (File.Exists(bakFile))
+                // {
+                //     bool restoreSuccess = false;
+                //     int fileRetryCount = 0;
+                //
+                //     while (!restoreSuccess && fileRetryCount < 10)
+                //     {
+                //         try
+                //         {
+                //             if (File.Exists(pakPath)) File.Delete(pakPath);
+                //             File.Copy(bakFile, pakPath, true);
+                //             restoreSuccess = true;
+                //             Debug.WriteLine("Original PAK restored successfully on closing.");
+                //         }
+                //         catch (IOException)
+                //         {
+                //             fileRetryCount++;
+                //             await Task.Delay(500);
+                //         }
+                //     }
+                //
+                //     if (!restoreSuccess)
+                //     {
+                //         System.Windows.MessageBox.Show(
+                //             "The restoration of the legitimate PAK file failed because the game process is continuously locking the file.\n" +
+                //             "We apologize for the inconvenience, but please manually move the pakchunk3-Windows.pak.bak file from the bak folder back to its original paks folder.",
+                //             "Restore error", MessageBoxButton.OK, MessageBoxImage.Warning);
+                //     }
+                // }
+
+                #endregion
                 string pakPath = Path.Combine(gameService.OutputDir, "pakchunk3-Windows.pak");
-
-                if (File.Exists(bakFile))
+                string modBakFile = Path.Combine(gameService.OutputDir, "mods", "pakchunk3-Windows.pak.bak");
+                string tempPak = pakPath + ".tmp";
+                if (File.Exists(pakPath))
                 {
-                    bool restoreSuccess = false;
-                    int fileRetryCount = 0;
-
-                    while (!restoreSuccess && fileRetryCount < 10)
+                    long currentPakSize = new FileInfo(pakPath).Length; // 현재 paks 폴더에 있는 파일 용량 측정
+                    if (appSettings.ModSize > 0 && currentPakSize == appSettings.ModSize)
                     {
-                        try
-                        {
-                            if (File.Exists(pakPath)) File.Delete(pakPath);
-                            File.Copy(bakFile, pakPath, true);
-                            restoreSuccess = true;
-                            Debug.WriteLine("Original PAK restored successfully on closing.");
-                        }
-                        catch (IOException)
-                        {
-                            fileRetryCount++;
-                            await Task.Delay(500);
-                        }
-                    }
+                        bool restoreSuccess = false;
+                        int fileRetryCount = 0;
 
-                    if (!restoreSuccess)
-                    {
-                        System.Windows.MessageBox.Show(
-                            "The restoration of the legitimate PAK file failed because the game process is continuously locking the file.\n" +
-                            "We apologize for the inconvenience, but please manually move the pakchunk3-Windows.pak.bak file from the bak folder back to its original paks folder.",
-                            "Restore error", MessageBoxButton.OK, MessageBoxImage.Warning);
+                        while (!restoreSuccess && fileRetryCount < 10)
+                        {
+                            try
+                            {
+                                if (File.Exists(tempPak)) File.Delete(tempPak);
+
+                                File.Move(pakPath, tempPak);       // 1. 게임폴더(모드) -> 임시파일
+                                File.Move(modBakFile, pakPath);    // 2. mods폴더(순정) -> 게임폴더 (순정 복구 완료)
+                                File.Move(tempPak, modBakFile);    // 3. 임시파일(모드) -> mods폴더 (모드 백업 복구)
+
+                                restoreSuccess = true;
+                                Debug.WriteLine("Original PAK restored successfully via Swap on closing.");
+                            }
+                            catch (IOException)
+                            {
+                                // 게임 프로세스가 파일을 붙잡고 있어서 락이 걸린 경우 대기 후 재시도
+                                // If the game process is holding the file and causing a lock, wait and retry.
+                                fileRetryCount++;
+                                await Task.Delay(500);
+                            }
+                        }
+
+                        if (!restoreSuccess)
+                        {
+                            System.Windows.MessageBox.Show(
+                                "The restoration of the legitimate PAK file failed because the game process is continuously locking the file.\n" +
+                                "We apologize for the inconvenience, but please restart the tool next time to restore it automatically.",
+                                "Restore error", MessageBoxButton.OK, MessageBoxImage.Warning);
+                        }
                     }
                 }
             }
@@ -523,7 +729,14 @@ namespace NtePakTool
             finally
             {
                 _isClosingHandled = true;
-                this.Close();
+                //this.Close();
+                // sym_update : Fixed crashing bug
+                //️ [튕김 버그 해결] 창 닫기 프로세스가 완전히 끝난 뒤 안전하게 종료되도록 타이밍을 미룹니다.
+                // [Fix] errors thrown during build and intermittent bugs during run
+                _ = Dispatcher.InvokeAsync(() =>
+                {
+                    this.Close();
+                });
             }
         }
 
