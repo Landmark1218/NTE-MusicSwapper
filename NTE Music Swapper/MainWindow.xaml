@@ -139,10 +139,10 @@
 
         <Border Grid.Row="3" Background="#0A0A0A" CornerRadius="3"
                 BorderBrush="#333" BorderThickness="1" Margin="0,2,0,2">
-            <ScrollViewer x:Name="LogScroller">
-                <TextBlock x:Name="TxtLog" Foreground="#888" FontFamily="Consolas"
-                           FontSize="9" Margin="5" TextWrapping="Wrap"/>
-            </ScrollViewer>
+            <TextBox x:Name="TxtLog" Foreground="#888" FontFamily="Consolas"
+                     FontSize="9" Margin="5" TextWrapping="Wrap"
+                     IsReadOnly="True" Background="Transparent" BorderThickness="0"
+                     VerticalScrollBarVisibility="Auto" />
         </Border>
 
         <Grid Grid.Row="4" Margin="0,6,0,0">

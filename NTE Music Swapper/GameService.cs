@@ -29,52 +29,149 @@ namespace NtePakTool
             this.unpackDir = unpackDir;
             this.log = log;
         }
+
+        // ── 安全なスワップ処理（ファイル消失＆汚染防止） ──
+        public async Task<bool> SafeApplyModAsync(string pakPath, long modSize)
+        {
+            string bakFile = pakPath + ".bak";
+            string modFile = pakPath + ".mod";
+
+            if (!File.Exists(pakPath)) return false;
+            if (!File.Exists(modFile))
+            {
+                Log($"Apply Error: MOD file not found -> {Path.GetFileName(modFile)}");
+                return false;
+            }
+
+            long currentSize = new FileInfo(pakPath).Length;
+            if (modSize > 0 && currentSize == modSize)
+            {
+                Log($"Apply: File is already MOD state. ({Path.GetFileName(pakPath)})");
+                return true;
+            }
+
+            int retryCount = 0;
+            while (retryCount < 10)
+            {
+                try
+                {
+                    if (File.Exists(bakFile)) File.Delete(bakFile);
+                    File.Move(pakPath, bakFile); // 純粋なファイルを退避
+
+                    try
+                    {
+                        File.Move(modFile, pakPath); // MODファイルを適用
+                    }
+                    catch (IOException)
+                    {
+                        File.Move(bakFile, pakPath); // 失敗時はロールバックしてファイル消失を防ぐ
+                        throw;
+                    }
+                    Log($"Apply Success: Swap completed for {Path.GetFileName(pakPath)}");
+                    return true;
+                }
+                catch (IOException)
+                {
+                    retryCount++;
+                    await Task.Delay(500); // ロックされている場合は待機してリトライ
+                }
+            }
+            Log($"Apply Error: File locked by process. Swap failed for {Path.GetFileName(pakPath)}");
+            return false;
+        }
+
+        public async Task<bool> SafeRestoreVanillaAsync(string pakPath, long modSize)
+        {
+            string bakFile = pakPath + ".bak";
+            string modFile = pakPath + ".mod";
+
+            if (!File.Exists(pakPath)) return false;
+
+            long currentSize = new FileInfo(pakPath).Length;
+            if (modSize > 0 && currentSize != modSize)
+            {
+                Log($"Restore: File is not MOD state. Likely already Vanilla. ({Path.GetFileName(pakPath)})");
+                return true;
+            }
+
+            if (!File.Exists(bakFile))
+            {
+                Log($"Restore Error: Original backup not found -> {Path.GetFileName(bakFile)}");
+                return false;
+            }
+
+            int retryCount = 0;
+            while (retryCount < 10)
+            {
+                try
+                {
+                    if (File.Exists(modFile)) File.Delete(modFile);
+                    File.Move(pakPath, modFile);
+
+                    try
+                    {
+                        File.Move(bakFile, pakPath);
+                    }
+                    catch (IOException)
+                    {
+                        File.Move(modFile, pakPath); // ロールバック
+                        throw;
+                    }
+                    Log($"Restore Success: Vanilla restored for {Path.GetFileName(pakPath)}");
+                    return true;
+                }
+                catch (IOException)
+                {
+                    retryCount++;
+                    await Task.Delay(500);
+                }
+            }
+            Log($"Restore Error: File locked by process. Restore failed for {Path.GetFileName(pakPath)}");
+            return false;
+        }
+        // ────────────────────────────────────────
+
         public async Task<string> GetLatestVersionAsync()
         {
             try
             {
                 using var hc = new HttpClient();
-                hc.Timeout = TimeSpan.FromSeconds(5); // Timeout after 5 seconds to avoid slow startup
+                hc.Timeout = TimeSpan.FromSeconds(5);
                 var json = await hc.GetStringAsync(VersionUrl);
                 using var doc = JsonDocument.Parse(json);
                 return doc.RootElement.GetProperty("LatestVersion").GetString() ?? "0.0";
             }
             catch (Exception ex)
             {
-                log("Version Check Error: " + ex.Message);
-                return "0.0"; // Return 0.0 on failure (e.g. offline) to skip the version check without error
+                Log("Version Check Error: " + ex.Message);
+                return "0.0";
             }
         }
 
-        // Game detection
         public async Task DetectGameRootAsync(AppSettingsJson appSettings, Action saveSettingsCallback)
         {
-            // Check if the cached path is still valid
             if (!string.IsNullOrEmpty(appSettings.GameRootDir) &&
                 Directory.Exists(appSettings.GameRootDir) &&
                 File.Exists(Path.Combine(appSettings.GameRootDir, "NTEGlobalLauncher.exe")))
             {
-                log($"Cache: Loading game root from settings: {appSettings.GameRootDir}");
+                Log($"Cache: Loading game root from settings: {appSettings.GameRootDir}");
                 GameRootDir = appSettings.GameRootDir;
             }
             else
             {
-                // No cache or cache is invalid — scan all drives
-                log("Scanning drives for Neverness To Everness folder (Fast Search)...");
+                Log("Scanning drives for Neverness To Everness folder (Fast Search)...");
                 GameRootDir = await Task.Run(() => PerformFastGameSearch());
 
                 if (string.IsNullOrEmpty(GameRootDir))
                 {
-                    log("Warning: Could not automatically detect the game directory. Bypass and Backup functions may not work.");
+                    Log("Warning: Could not automatically detect the game directory. Bypass and Backup functions may not work.");
                     return;
                 }
 
-                log($"SUCCESS: Auto-detected game root at: {GameRootDir}");
-
-                // Save detection result to JSON
+                Log($"SUCCESS: Auto-detected game root at: {GameRootDir}");
                 appSettings.GameRootDir = GameRootDir;
                 saveSettingsCallback?.Invoke();
-                log("Cache: Game root path saved to settings.");
+                Log("Cache: Game root path saved to settings.");
             }
 
             LauncherPath = Path.Combine(GameRootDir, "NTEGlobalLauncher.exe");
@@ -83,11 +180,11 @@ namespace NtePakTool
             if (paksDirs.Length > 0)
             {
                 OutputDir = paksDirs[0];
-                log($"SUCCESS: Paks folder detected at: {OutputDir}");
+                Log($"SUCCESS: Paks folder detected at: {OutputDir}");
             }
             else
             {
-                log("Warning: Paks folder not found inside the game root.");
+                Log("Warning: Paks folder not found inside the game root.");
             }
         }
 
@@ -133,170 +230,87 @@ namespace NtePakTool
             return string.Empty;
         }
 
-        // PAK operations
-        // Added Action saveSettingsCallback parameter
         public async Task CheckAndStartLauncherOnStartupAsync(AppSettingsJson appSettings, Action saveSettingsCallback)
         {
             if (string.IsNullOrEmpty(OutputDir) || !Directory.Exists(OutputDir)) return;
 
-            string bakDir = Path.Combine(OutputDir, "bak");
-            string bakFile = Path.Combine(bakDir, "pakchunk3-Windows.pak.bak");
             string originalPak = Path.Combine(OutputDir, "pakchunk3-Windows.pak");
-            string modBakFile = Path.Combine(OutputDir, "mods", "pakchunk3-Windows.pak.bak");
+            string bakFile = originalPak + ".bak";
+            string modFile = originalPak + ".mod";
 
             try
             {
-                if (!Directory.Exists(bakDir)) Directory.CreateDirectory(bakDir);
-
-                // sym_update : for file swap system
-                // 원본 폴더에 .pak가 없는데 mods 폴더에만 파일이 남아있는 경우 (파일 증발 버그 상태)
-                // Case where the .pak file does not exist in the source folder but remains only in the mods folder (file disappearance bug)
-                if (!File.Exists(originalPak) && File.Exists(modBakFile))
+                if (!File.Exists(originalPak) && File.Exists(modFile) && !File.Exists(bakFile))
                 {
-                    try { File.Delete(modBakFile); } catch { } // 깨진(남겨진) 모드 파일 찌꺼기 제거
-                    log("Startup: Original PAK is missing but MOD file(but it's vanilna file) exists. Cleared corrupted MOD file.");
-            
+                    try { File.Delete(modFile); } catch { }
+                    Log("Startup: Original PAK is missing but MOD file exists. Cleared corrupted MOD file.");
+
                     System.Windows.MessageBox.Show(
                         "mod file is crack.\n\n" +
                         "Please run the official launcher, proceed with [Game Update] or [Repair], and then rebuild the mod.\n" +
-                        "Or recover using the file located in the /bak path.",
+                        "Or recover using the file located in the paks path.",
                         "Mod File Corruption Notice",
                         MessageBoxButton.OK,
                         MessageBoxImage.Error);
-                    return; // 꼬임 방지를 위해 더 이상 아래 코드를 실행하지 않고 툴 로직 중단
+                    return;
                 }
-                
+
                 if (File.Exists(originalPak))
                 {
                     long currentPakSize = new FileInfo(originalPak).Length;
-                    long modPakSize = File.Exists(modBakFile) ? new FileInfo(modBakFile).Length : 0;
-                    bool isBackupMissing = !File.Exists(bakFile);
 
-                    
-                    // [Safety guard] If the current PAK size exactly matches the saved MOD size,
-                    // it is likely that the MOD was not removed due to an abnormal exit last time.
-                    // Skip updating the backup and restore to a clean state instead.
-                    
-                    // sym_update : change safety guard logic for file swap system
-                    #region origin safety guard code
-
-                    
-                    // if (appSettings.OriginalPakSize > 0 && currentPakSize == modPakSize && currentPakSize != appSettings.OriginalPakSize)
-                    // {
-                    //     log("Warning: The file in the paks folder may be a MOD remnant. Preventing overwrite of the clean backup.");
-                    //     if (!isBackupMissing)
-                    //     {
-                    //         File.Copy(bakFile, originalPak, true);
-                    //         currentPakSize = new FileInfo(originalPak).Length; // Re-fetch size after restoration
-                    //         log("Startup: Removed MOD remnant and restored the original PAK from backup.");
-                    //     }
-                    // }
-
-                    #endregion
-                    if (appSettings.OriginalPakSize > 0 && modPakSize == appSettings.OriginalPakSize && currentPakSize != appSettings.OriginalPakSize)
+                    if (appSettings.ModSize > 0 && currentPakSize == appSettings.ModSize)
                     {
-                        log("Warning: The tool was closed abnormally last time. Restoring to a clean state via Swap.");
-    
-                        // 복사(Copy) 교환(Swap)으로 원상복구
-                        string tempPak = originalPak + ".tmp";
-                        if (File.Exists(originalPak) && File.Exists(modBakFile))
-                        {
-                            if (File.Exists(tempPak)) File.Delete(tempPak);
-                            File.Move(originalPak, tempPak);       // 1. paks(모드) -> 임시
-                            File.Move(modBakFile, originalPak);    // 2. mods(순정) -> paks (순정 복구!)
-                            File.Move(tempPak, modBakFile);        // 3. 임시(모드) -> mods (모드 백업 복구!)
-        
-                            currentPakSize = new FileInfo(originalPak).Length; // 복구 후 용량 갱신
-                            log("Startup: Recovered safely from abnormal exit.");
-                        }
+                        Log("Warning: The tool was closed abnormally last time. Restoring to a clean state via Rename.");
+                        await SafeRestoreVanillaAsync(originalPak, appSettings.ModSize);
+                        currentPakSize = new FileInfo(originalPak).Length;
                     }
 
-                    // Get the size of the backup file in the bak folder
-                    long bakFileSize = isBackupMissing ? 0 : new FileInfo(bakFile).Length;
-
-                    // [Update detection]
-                    // Triggered when the PAK size in paks differs from the .bak size, or differs from the size recorded in JSON
                     bool isGameUpdated = false;
-                    if (!isBackupMissing && currentPakSize != bakFileSize)
-                    {
-                        isGameUpdated = true;
-                    }
-                    else if (appSettings.OriginalPakSize > 0 && appSettings.OriginalPakSize != currentPakSize)
+                    if (appSettings.OriginalPakSize > 0 && appSettings.OriginalPakSize != currentPakSize)
                     {
                         isGameUpdated = true;
                     }
 
-                    if (isBackupMissing || isGameUpdated)
+                    if (isGameUpdated)
                     {
-                        if (isGameUpdated)
-                        {
-                            log($"Startup: Game update detected! (Current: {currentPakSize}, Backup: {bakFileSize})");
+                        Log($"Startup: Game update detected! (Current: {currentPakSize}, Old: {appSettings.OriginalPakSize})");
 
-                            // [Added] When an update is detected, delete the outdated backup from the mods folder
-                            if (File.Exists(modBakFile))
-                            {
-                                File.Delete(modBakFile);
-                                log("Startup: Deleted outdated MOD file from mods folder.");
-                            }
-
-                            log("Startup: Recreating clean PAK backup...");
-                            System.Windows.MessageBox.Show(
-                                "The game version has been updated, so the MOD has been removed.",
-                                "Update Detected",
-                                MessageBoxButton.OK,
-                                MessageBoxImage.Information);
-                        }
-                        else
+                        if (File.Exists(modFile))
                         {
-                            log("Startup: Creating original PAK backup...");
+                            File.Delete(modFile);
+                            Log("Startup: Deleted outdated MOD file.");
                         }
 
-                        // Create (or overwrite) the backup
-                        File.Copy(originalPak, bakFile, true);
+                        System.Windows.MessageBox.Show(
+                            "The game version has been updated, so the MOD has been removed.",
+                            "Update Detected",
+                            MessageBoxButton.OK,
+                            MessageBoxImage.Information);
+                    }
 
-                        // Update and save the size info in JSON
+                    if (appSettings.OriginalPakSize != currentPakSize)
+                    {
                         appSettings.OriginalPakSize = currentPakSize;
                         saveSettingsCallback?.Invoke();
-
-                        log("Startup: Backup creation and size update complete.");
                     }
                 }
             }
-            catch (Exception ex) { log("Startup Backup Error: " + ex.Message); }
+            catch (Exception ex) { Log("Startup Backup Error: " + ex.Message); }
 
             bool isLauncherRunning = IsProcessRunning("NTEGlobalGame");
 
-            if (appSettings.SaveModEnabled && File.Exists(modBakFile))
+            if (appSettings.SaveModEnabled && File.Exists(modFile))
             {
-                log("Startup: Auto-Save MOD is enabled. Applying saved MOD...");
+                Log("Startup: Auto-Save MOD is enabled. Applying saved MOD...");
                 if (isLauncherRunning)
                 {
-                    log("Startup: Launcher is already running. Applying MOD directly.");
-                    try
-                    {
-                        // sym_update : for file swap system
-                        #region origin code
-
-                        // if (File.Exists(originalPak)) File.Delete(originalPak);
-                        // File.Copy(modBakFile, originalPak, true);
-                        // log("Startup: Mod applied successfully.");
-
-                        #endregion
-                        string tempPak = originalPak + ".tmp";
-                        if (File.Exists(originalPak))
-                        {
-                            if (File.Exists(tempPak)) File.Delete(tempPak);
-                            File.Move(originalPak, tempPak);       // 1. 원본(순정) -> 임시
-                            File.Move(modBakFile, originalPak);    // 2. mods(모드) -> 원본 (적용 완료!)
-                            File.Move(tempPak, modBakFile);        // 3. 임시(순정) -> mods (순정 보관 완료!)
-                        }
-                        log("Startup: Mod applied successfully via Swap.");
-                    }
-                    catch (Exception ex) { log("Startup Mod Apply Error: " + ex.Message); }
+                    Log("Startup: Launcher is already running. Applying MOD directly.");
+                    await SafeApplyModAsync(originalPak, appSettings.ModSize);
                 }
                 else
                 {
-                    await PerformBypassSwap(appSettings.ModApplyDelay);
+                    await PerformBypassSwap(appSettings.ModApplyDelay, appSettings.ModSize);
                 }
             }
             else
@@ -308,184 +322,88 @@ namespace NtePakTool
                         try
                         {
                             Process.Start(new ProcessStartInfo(LauncherPath) { UseShellExecute = true });
-                            log("Startup: Launcher (NTEGlobalGame) started (No MOD).");
+                            Log("Startup: Launcher (NTEGlobalGame) started (No MOD).");
                         }
-                        catch (Exception ex) { log("Startup Launcher Error: " + ex.Message); }
+                        catch (Exception ex) { Log("Startup Launcher Error: " + ex.Message); }
                     }
                 }
             }
         }
-        public async Task PerformBypassSwap(int modApplyDelay)
+
+        public async Task PerformBypassSwap(int modApplyDelay, long modSize)
         {
             try
             {
                 if (string.IsNullOrEmpty(OutputDir) || string.IsNullOrEmpty(LauncherPath)) return;
 
-                string paksDir = OutputDir;
-                string bakFile = Path.Combine(OutputDir, "bak", "pakchunk3-Windows.pak.bak");
-                string modBakFile = Path.Combine(OutputDir, "mods", "pakchunk3-Windows.pak.bak");
-                string pakPath = Path.Combine(paksDir, "pakchunk3-Windows.pak");
-                string tempPak = pakPath + ".tmp"; // sym_update : tempPath for file swap
+                string pakPath = Path.Combine(OutputDir, "pakchunk3-Windows.pak");
+                string bakFile = pakPath + ".bak";
+                string modFile = pakPath + ".mod";
 
-                // Repair files with abnormal names
                 try
                 {
-                    var weirdFiles = Directory.GetFiles(paksDir, "pakchunk3-Windows.pak*")
-                                              .Where(f => !f.Equals(pakPath, StringComparison.OrdinalIgnoreCase));
+                    var weirdFiles = Directory.GetFiles(OutputDir, "pakchunk3-Windows.pak*")
+                                              .Where(f => !f.Equals(pakPath, StringComparison.OrdinalIgnoreCase) &&
+                                                          !f.Equals(bakFile, StringComparison.OrdinalIgnoreCase) &&
+                                                          !f.Equals(modFile, StringComparison.OrdinalIgnoreCase));
 
                     foreach (var weirdFile in weirdFiles)
                     {
-                        log($"Found a file with an abnormal name: {Path.GetFileName(weirdFile)}");
+                        Log($"Found a file with an abnormal name: {Path.GetFileName(weirdFile)}");
                         if (File.Exists(pakPath)) File.Delete(pakPath);
                         File.Move(weirdFile, pakPath);
-                        log($"-> Repaired to correct extension ({Path.GetFileName(pakPath)}).");
+                        Log($"-> Repaired to correct extension ({Path.GetFileName(pakPath)}).");
                     }
                 }
                 catch (Exception ex)
                 {
-                    log("An error occurred while repairing the filename: " + ex.Message);
+                    Log("An error occurred while repairing the filename: " + ex.Message);
                 }
-
-                // sym_update : Replaced the file copy and paste function with a file swap function.
-                #region origin code
-
-                // if (File.Exists(pakPath))
-                // {
-                //     File.Delete(pakPath);
-                //     log("Bypass: Deleted existing file in paks folder.");
-                // }
-                //
-                // if (File.Exists(bakFile))
-                // {
-                //     File.Copy(bakFile, pakPath, true);
-                //     log("Bypass: Clean PAK copied to paks folder.");
-                // }
-                // else
-                // {
-                //     log("Critical Error: Backup original file not found in bak!");
-                //     return;
-                // }
-
-                #endregion
-                /* sym_review : why delete this logic?
-                It was replaced with a vanilla file before exiting, or it is not needed because it is already a vanilla file due to the safety guard.*/
-                
 
                 if (!File.Exists(pakPath))
                 {
-                    log("Error: Verification failed. PAK is missing.");
+                    Log("Error: Verification failed. PAK is missing.");
                     return;
                 }
-                log("Bypass: File verification success. Starting Launcher...");
+                Log("Bypass: File verification success. Starting Launcher...");
 
                 try { Process.Start(new ProcessStartInfo(LauncherPath) { UseShellExecute = true }); }
-                catch (Exception ex) { log("Launcher Start Error: " + ex.Message); return; }
+                catch (Exception ex) { Log("Launcher Start Error: " + ex.Message); return; }
 
-                log("Bypass: Waiting for Launcher window to appear...");
+                Log("Bypass: Waiting for Launcher window to appear...");
                 while (!IsLauncherWindowVisible("NTEGlobalGame")) await Task.Delay(100);
 
-                
-                // mod injection process
-                // sym_update : Replaced the file copy and paste function with a file swap function.
-                log($"Bypass: Launcher window detected! Waiting {(float)modApplyDelay/1000}s for mod injection...");
-                await Task.Delay(modApplyDelay); // sym_TODO : Save the time variable desired by the user to appSettings. : Complete
+                Log($"Bypass: Launcher window detected! Waiting {(float)modApplyDelay / 1000}s for mod injection...");
+                await Task.Delay(modApplyDelay);
 
-                #region origin code
-                // if (File.Exists(modBakFile))
-                // {
-                //     if (File.Exists(pakPath)) File.Delete(pakPath);
-                //     File.Copy(modBakFile, pakPath, true);
-                //     log("Bypass Complete: Mod applied successfully.");
-                // }
-                // else
-                // {
-                //     log("Warning: Mod backup not found in mods folder. Bypass aborted.");
-                // }
-                #endregion
-                
-                if (File.Exists(modBakFile))
+                if (File.Exists(modFile))
                 {
-                    // pakPath(현재 순정)가 존재하는 정상적인 상황에서의 1:1 스왑
-                    // 1:1 swap in a normal situation where pakPath(current vanilla file) exists
-                    if (File.Exists(pakPath)) 
+                    if (File.Exists(pakPath))
                     {
-                        if (File.Exists(tempPak)) File.Delete(tempPak); // 혹시 모를 찌꺼기 제거
-                        File.Move(pakPath, tempPak);       // 1. 순정 -> 임시 대기소
-                        File.Move(modBakFile, pakPath);    // 2. 모드 -> 게임 폴더 (적용 완료!)
-                        File.Move(tempPak, modBakFile);    // 3. 임시 대기소(순정) -> mods 폴더
-
-                        log("Bypass Complete: Swap applied successfully.");
-                        System.Windows.MessageBox.Show("Success Mod Apply\nYou can now run the game from the launcher.", "Success Mod Apply",
-                            MessageBoxButton.OK,
-                            MessageBoxImage.Information,
-                            MessageBoxResult.OK,
-                            MessageBoxOptions.DefaultDesktopOnly);
+                        bool applied = await SafeApplyModAsync(pakPath, modSize);
+                        if (applied)
+                        {
+                            System.Windows.MessageBox.Show("Success Mod Apply\nYou can now run the game from the launcher.", "Success Mod Apply",
+                                MessageBoxButton.OK, MessageBoxImage.Information, MessageBoxResult.OK, MessageBoxOptions.DefaultDesktopOnly);
+                        }
                     }
                     else
                     {
-                        // 만약 모종의 이유로 게임 폴더가 비어있다면 그냥 이동만 시킴
-                        // If the game folder is empty for some reason, just move the files.
-                        File.Move(modBakFile, pakPath);
+                        File.Move(modFile, pakPath);
                         System.Windows.MessageBox.Show(".pak is missing. you are maybe game repair", ".pak is missing.",
-                            MessageBoxButton.OK,
-                            MessageBoxImage.Information,
-                            MessageBoxResult.OK,
-                            MessageBoxOptions.DefaultDesktopOnly);
-                        log("Warning: originFile is missing. you are maybe game repair");
+                            MessageBoxButton.OK, MessageBoxImage.Information, MessageBoxResult.OK, MessageBoxOptions.DefaultDesktopOnly);
+                        Log("Warning: originFile is missing. you are maybe game repair");
                     }
                 }
                 else
                 {
-                    log("Warning: Mod backup not found in mods folder. Bypass aborted.");
+                    Log("Warning: Mod file not found. Bypass aborted.");
                 }
-                
+
             }
-            catch (Exception ex) { log("Bypass Swap Error: " + ex.Message); }
+            catch (Exception ex) { Log("Bypass Swap Error: " + ex.Message); }
         }
 
-        // sym_update : save mod size when mod build.
-        #region origin code
-        // public async Task PackingProcess(string base64Key)
-        // {
-        //     if (string.IsNullOrEmpty(OutputDir)) return;
-        //
-        //     string cryptoPath = Path.Combine(Path.GetTempPath(), "nte_crypto.json");
-        //     var crypto = new
-        //     {
-        //         EncryptionKey = new { Guid = "00000000000000000000000000000000", Name = "NTEKey", Key = base64Key },
-        //         bDataCryptoRequired = false,
-        //         bEnablePakIndexEncryption = true,
-        //         bEnablePakEntryEncryption = false,
-        //         bEnablePakSigning = false
-        //     };
-        //     File.WriteAllText(cryptoPath, JsonSerializer.Serialize(crypto));
-        //
-        //     string resPath = Path.Combine(Path.GetTempPath(), "pak_response.txt");
-        //     using (var sw = new StreamWriter(resPath, false, new UTF8Encoding(false)))
-        //     {
-        //         foreach (string f in Directory.GetFiles(unpackDir, "*", SearchOption.AllDirectories))
-        //         {
-        //             string rel = f.Substring(unpackDir.Length).TrimStart('\\').Replace('\\', '/');
-        //             sw.WriteLine($"\"{f}\" \"../../../HT/{rel}\"");
-        //         }
-        //     }
-        //
-        //     string pakPath = Path.Combine(OutputDir, "pakchunk3-Windows.pak");
-        //     string upakExe = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "UnrealPak", "UnrealPak.exe");
-        //     await RunProcessAsync(upakExe, $"\"{pakPath}\" -create=\"{resPath}\" -cryptokeys=\"{cryptoPath}\"");
-        //
-        //     string modsDir = Path.Combine(OutputDir, "mods");
-        //     string modBakFile = Path.Combine(modsDir, "pakchunk3-Windows.pak.bak");
-        //
-        //     if (!Directory.Exists(modsDir)) Directory.CreateDirectory(modsDir);
-        //
-        //     if (File.Exists(pakPath))
-        //     {
-        //         File.Copy(pakPath, modBakFile, true);
-        //         log("Build: Created Mod backup in mods folder.");
-        //     }
-        // }
-        #endregion
         public async Task<long> PackingProcess(string base64Key)
         {
             if (string.IsNullOrEmpty(OutputDir)) return 0;
@@ -511,32 +429,24 @@ namespace NtePakTool
                 }
             }
 
-            
-            string modsDir = Path.Combine(OutputDir, "mods");
-            string modBakFile = Path.Combine(modsDir, "pakchunk3-Windows.pak.bak");
-            if (!Directory.Exists(modsDir)) Directory.CreateDirectory(modsDir);
-            
-            // [핵심 수정] 언리얼팩 생성 경로를 게임 폴더가 아닌 mods 폴더로 다이렉트 지정
-            // [Fix] Directly set the Unreal Pack creation path to the mods folder instead of the game folder
+            string pakPath = Path.Combine(OutputDir, "pakchunk3-Windows.pak");
+            string modFile = pakPath + ".mod";
+
             string upakExe = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "UnrealPak", "UnrealPak.exe");
-            await RunProcessAsync(upakExe, $"\"{modBakFile}\" -create=\"{resPath}\" -cryptokeys=\"{cryptoPath}\"");
+            await RunProcessAsync(upakExe, $"\"{modFile}\" -create=\"{resPath}\" -cryptokeys=\"{cryptoPath}\"");
 
-
-            if (File.Exists(modBakFile))
+            if (File.Exists(modFile))
             {
-                long modSize = new FileInfo(modBakFile).Length;
-                string pakPath = Path.Combine(OutputDir, "pakchunk3-Windows.pak");
-                string tempPak = pakPath + ".tmp";
-                if (File.Exists(tempPak)) File.Delete(tempPak);
+                long modSize = new FileInfo(modFile).Length;
 
-                File.Move(pakPath, tempPak);       // 1. 원본 순정 파일 -> 임시 대기소로
-                File.Move(modBakFile, pakPath);    // 2. 따끈따끈한 새 모드 파일 -> 원본 경로로 (적용 완료!)
-                File.Move(tempPak, modBakFile);    // 3. 임시 대기소(순정) -> mods 폴더로 백업 보관
-                log("Build: Created Mod backup in mods folder and Swap.");
-                // sym_update : return mod size to AudioService for save mod size
+                if (File.Exists(pakPath))
+                {
+                    await SafeApplyModAsync(pakPath, modSize);
+                    Log("Build: Created Mod and applied safely.");
+                }
                 return modSize;
             }
-            return 0; // return 0 when fail
+            return 0;
         }
 
         public async Task<string> GetAesKeyBase64Async()
@@ -551,7 +461,6 @@ namespace NtePakTool
             return Convert.ToBase64String(bytes);
         }
 
-        // Process management
         public bool IsProcessRunning(string keyword) =>
             Process.GetProcesses().Any(p => p.ProcessName.IndexOf(keyword, StringComparison.OrdinalIgnoreCase) >= 0);
 
@@ -565,7 +474,7 @@ namespace NtePakTool
                     {
                         p.Kill();
                         p.WaitForExit(1000);
-                        log($"Killed process: {p.ProcessName}");
+                        Log($"Killed process: {p.ProcessName}");
                     }
                 }
                 catch { }
@@ -573,6 +482,196 @@ namespace NtePakTool
         }
 
         public void KillNteGlobalLauncher() => KillProcessesContainingName("NTEGlobalGame");
+
+        public string PatchPaksDir { get; private set; } = "";
+
+        public void SetPatchPaksDir(string gameRootDir)
+        {
+            if (string.IsNullOrEmpty(gameRootDir)) return;
+            PatchPaksDir = Path.Combine(gameRootDir, "Client", "WindowsNoEditor", "HT", "Content", "PatchPaks");
+        }
+
+        public async Task CheckPatchPakOnStartupAsync(AppSettingsJson appSettings, Action saveSettingsCallback)
+        {
+            if (string.IsNullOrEmpty(PatchPaksDir) || !Directory.Exists(PatchPaksDir)) return;
+
+            string originalPak = Path.Combine(PatchPaksDir, "pakchunk3-Windows_0_P.pak");
+            string bakFile = originalPak + ".bak";
+            string modFile = originalPak + ".mod";
+
+            try
+            {
+                if (!File.Exists(originalPak) && File.Exists(modFile) && !File.Exists(bakFile))
+                {
+                    try { File.Delete(modFile); } catch { }
+                    Log("PatchPak Startup: Original PAK is missing but MOD file exists. Cleared corrupted MOD file.");
+                    System.Windows.MessageBox.Show(
+                        "PatchPak mod file is corrupted.\n\n" +
+                        "Please run the official launcher, proceed with [Game Update] or [Repair], and then rebuild the mod.\n" +
+                        "Or recover using the file located in the PatchPaks path.",
+                        "PatchPak Mod File Corruption Notice",
+                        MessageBoxButton.OK,
+                        MessageBoxImage.Error);
+                    return;
+                }
+
+                if (File.Exists(originalPak))
+                {
+                    long currentPakSize = new FileInfo(originalPak).Length;
+
+                    if (appSettings.PatchModSize > 0 && currentPakSize == appSettings.PatchModSize)
+                    {
+                        Log("PatchPak Startup: Tool closed abnormally last time. Restoring via SafeRename.");
+                        await SafeRestoreVanillaAsync(originalPak, appSettings.PatchModSize);
+                        currentPakSize = new FileInfo(originalPak).Length;
+                    }
+
+                    bool isGameUpdated = false;
+                    if (appSettings.OriginalPatchPakSize > 0 && appSettings.OriginalPatchPakSize != currentPakSize)
+                        isGameUpdated = true;
+
+                    if (isGameUpdated)
+                    {
+                        Log($"PatchPak Startup: Game update detected! (Current: {currentPakSize}, Old: {appSettings.OriginalPatchPakSize})");
+                        if (File.Exists(modFile))
+                        {
+                            File.Delete(modFile);
+                            Log("PatchPak Startup: Deleted outdated MOD file.");
+                        }
+                        System.Windows.MessageBox.Show(
+                            "The game version has been updated, so the PatchPak MOD has been removed.",
+                            "PatchPak Update Detected",
+                            MessageBoxButton.OK,
+                            MessageBoxImage.Information);
+                    }
+
+                    if (appSettings.OriginalPatchPakSize != currentPakSize)
+                    {
+                        appSettings.OriginalPatchPakSize = currentPakSize;
+                        saveSettingsCallback?.Invoke();
+                    }
+                }
+            }
+            catch (Exception ex) { Log("PatchPak Startup Backup Error: " + ex.Message); }
+
+            bool isLauncherRunning = IsProcessRunning("NTEGlobalGame");
+            if (appSettings.SaveModEnabled && File.Exists(modFile))
+            {
+                Log("PatchPak Startup: Auto-Save MOD is enabled. Applying saved PatchPak MOD...");
+                if (isLauncherRunning)
+                {
+                    Log("PatchPak Startup: Launcher is already running. Applying PatchPak MOD directly.");
+                    await SafeApplyModAsync(originalPak, appSettings.PatchModSize);
+                }
+                else
+                {
+                    await PerformPatchPakBypassSwap(appSettings.ModApplyDelay, appSettings.PatchModSize);
+                }
+            }
+        }
+
+        public async Task PerformPatchPakBypassSwap(int modApplyDelay, long modSize)
+        {
+            try
+            {
+                if (string.IsNullOrEmpty(PatchPaksDir) || string.IsNullOrEmpty(LauncherPath)) return;
+
+                string pakPath = Path.Combine(PatchPaksDir, "pakchunk3-Windows_0_P.pak");
+                string bakFile = pakPath + ".bak";
+                string modFile = pakPath + ".mod";
+
+                try
+                {
+                    var weirdFiles = Directory.GetFiles(PatchPaksDir, "pakchunk3-Windows_0_P.pak*")
+                                              .Where(f => !f.Equals(pakPath, StringComparison.OrdinalIgnoreCase) &&
+                                                          !f.Equals(bakFile, StringComparison.OrdinalIgnoreCase) &&
+                                                          !f.Equals(modFile, StringComparison.OrdinalIgnoreCase));
+                    foreach (var weirdFile in weirdFiles)
+                    {
+                        Log($"PatchPak: Found a file with an abnormal name: {Path.GetFileName(weirdFile)}");
+                        if (File.Exists(pakPath)) File.Delete(pakPath);
+                        File.Move(weirdFile, pakPath);
+                        Log($"PatchPak: -> Repaired to correct extension ({Path.GetFileName(pakPath)}).");
+                    }
+                }
+                catch (Exception ex) { Log("PatchPak: An error occurred while repairing the filename: " + ex.Message); }
+
+                if (!File.Exists(pakPath))
+                {
+                    Log("PatchPak Bypass: File verification failed. PAK is missing.");
+                    return;
+                }
+
+                Log("PatchPak Bypass: Waiting for Launcher window to appear...");
+                while (!IsLauncherWindowVisible("NTEGlobalGame")) await Task.Delay(100);
+
+                Log($"PatchPak Bypass: Launcher window detected! Waiting {(float)modApplyDelay / 1000}s for PatchPak mod injection...");
+                await Task.Delay(modApplyDelay);
+
+                if (File.Exists(modFile))
+                {
+                    if (File.Exists(pakPath))
+                    {
+                        await SafeApplyModAsync(pakPath, modSize);
+                    }
+                    else
+                    {
+                        File.Move(modFile, pakPath);
+                        Log("PatchPak Bypass Warning: originFile was missing. PatchPak MOD moved to paks.");
+                    }
+                }
+                else
+                {
+                    Log("PatchPak Bypass Warning: PatchPak MOD file not found. Bypass aborted.");
+                }
+            }
+            catch (Exception ex) { Log("PatchPak Bypass Swap Error: " + ex.Message); }
+        }
+
+        public async Task<long> PackingProcessPatchPak(string base64Key, string unpak1Dir)
+        {
+            if (string.IsNullOrEmpty(PatchPaksDir)) return 0;
+
+            string cryptoPath = Path.Combine(Path.GetTempPath(), "nte_crypto_patch.json");
+            var crypto = new
+            {
+                EncryptionKey = new { Guid = "00000000000000000000000000000000", Name = "NTEKey", Key = base64Key },
+                bDataCryptoRequired = false,
+                bEnablePakIndexEncryption = true,
+                bEnablePakEntryEncryption = false,
+                bEnablePakSigning = false
+            };
+            File.WriteAllText(cryptoPath, JsonSerializer.Serialize(crypto));
+
+            string resPath = Path.Combine(Path.GetTempPath(), "pak_response_patch.txt");
+            using (var sw = new StreamWriter(resPath, false, new UTF8Encoding(false)))
+            {
+                foreach (string f in Directory.GetFiles(unpak1Dir, "*", SearchOption.AllDirectories))
+                {
+                    string rel = f.Substring(unpak1Dir.Length).TrimStart('\\').Replace('\\', '/');
+                    sw.WriteLine($"\"{f}\" \"../../../HT/{rel}\"");
+                }
+            }
+
+            string pakPath = Path.Combine(PatchPaksDir, "pakchunk3-Windows_0_P.pak");
+            string modFile = pakPath + ".mod";
+
+            string upakExe = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "UnrealPak", "UnrealPak.exe");
+            await RunProcessAsync(upakExe, $"\"{modFile}\" -create=\"{resPath}\" -cryptokeys=\"{cryptoPath}\"");
+
+            if (File.Exists(modFile))
+            {
+                long modSize = new FileInfo(modFile).Length;
+
+                if (File.Exists(pakPath))
+                {
+                    await SafeApplyModAsync(pakPath, modSize);
+                    Log("PatchPak Build: Created Mod and applied safely.");
+                }
+                return modSize;
+            }
+            return 0;
+        }
 
         [DllImport("user32.dll")]
         [return: MarshalAs(UnmanagedType.Bool)]
@@ -592,7 +691,6 @@ namespace NtePakTool
             return false;
         }
 
-        // Utilities
         public Task RunProcessAsync(string exe, string arg)
         {
             var tcs = new TaskCompletionSource<bool>();
@@ -606,11 +704,13 @@ namespace NtePakTool
                 },
                 EnableRaisingEvents = true
             };
-            p.OutputDataReceived += (s, e) => { if (e.Data != null) log("> " + e.Data); };
+            p.OutputDataReceived += (s, e) => { if (e.Data != null) log?.Invoke("> " + e.Data); };
             p.Exited += (s, e) => { tcs.SetResult(true); p.Dispose(); };
             p.Start();
             p.BeginOutputReadLine();
             return tcs.Task;
         }
+
+        private void Log(string m) => log?.Invoke(m);
     }
 }

@@ -30,7 +30,10 @@ namespace NtePakTool
             string unpackHtDir = System.IO.Path.Combine(
                 AppDomain.CurrentDomain.BaseDirectory, "Unpak", "HT");
 
-            var verifier = new AssetVerifier(unpackHtDir, SetProgress);
+            string unpack1HtDir = System.IO.Path.Combine(
+                AppDomain.CurrentDomain.BaseDirectory, "Unpak1", "HT");
+
+            var verifier = new AssetVerifier(unpackHtDir, SetProgress, unpack1HtDir);
 
             try
             {

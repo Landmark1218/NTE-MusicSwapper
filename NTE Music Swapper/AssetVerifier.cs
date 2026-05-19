@@ -32,11 +32,13 @@ namespace NtePakTool
             "https://github.com/Landmark1218/Trash/raw/refs/heads/main/AES.json"; //i love this free strage♡
 
         private readonly string _unpackHtDir;   // Unpak/HT
+        private readonly string _unpack1HtDir;  // Unpak1/HT (for pakchunk3-Windows_0_P.pak)
         private readonly Action<VerifierProgressArgs> _progress;
 
-        public AssetVerifier(string unpackHtDir, Action<VerifierProgressArgs> progress)
+        public AssetVerifier(string unpackHtDir, Action<VerifierProgressArgs> progress, string unpack1HtDir = "")
         {
             _unpackHtDir = unpackHtDir;
+            _unpack1HtDir = unpack1HtDir;
             _progress = progress;
         }
 
@@ -85,16 +87,112 @@ namespace NtePakTool
 
                 // 7. Check differences with Unpak folder
                 Report("Checking for missing assets...", 0.20);
-                var missing = GetMissingFiles(allFiles);
+                var missing = GetMissingFiles(allFiles, _unpackHtDir);
 
                 if (missing.Count == 0)
                 {
                     Report("All assets are present.", 1.0);
+                }
+                else
+                {
+                    Report($"Extracting {missing.Count:N0} missing assets...", 0.22);
+                    // 8. Extract only missing files in parallel
+                    int done = 0;
+                    int total = missing.Count;
+
+                    await Task.Run(() =>
+                    {
+                        Parallel.ForEach(
+                            missing,
+                            new ParallelOptions
+                            {
+                                MaxDegreeOfParallelism = Environment.ProcessorCount,
+                                CancellationToken = ct
+                            },
+                            kv =>
+                            {
+                                var gameFile = kv.Value;
+                                try
+                                {
+                                    if (gameFile.IsUePackage)
+                                    {
+                                        var package = provider.SavePackage(gameFile);
+                                        foreach (var (vPath, data) in package)
+                                            WriteFile(vPath, data, _unpackHtDir);
+                                    }
+                                    else
+                                    {
+                                        var data = provider.SaveAsset(gameFile);
+                                        WriteFile(gameFile.Path, data, _unpackHtDir);
+                                    }
+                                }
+                                catch { /* Ignore individual failures and continue */ }
+
+                                int current = Interlocked.Increment(ref done);
+                                double pct = 0.22 + (double)current / total * 0.78;
+                                Report($"Currently running... {current:N0} / {total:N0}", pct);
+                            });
+                    }, ct);
+
+                    Report("Asset extraction completed.", 1.0);
+                }
+            }
+            finally
+            {
+                // Move PAK back to original location
+                if (File.Exists(tempPak))
+                    File.Move(tempPak, pakPath, overwrite: true);
+                if (Directory.Exists(tempDir))
+                    Directory.Delete(tempDir, recursive: true);
+            }
+
+            // ── PatchPak (pakchunk3-Windows_0_P.pak) verification into Unpak1 ──
+            if (!string.IsNullOrEmpty(_unpack1HtDir))
+            {
+                await RunPatchPakVerifyAsync(usmapPath, aesKey, ct);
+            }
+
+            // Delete usmap temporary file
+            if (File.Exists(usmapPath))
+                File.Delete(usmapPath);
+        }
+
+        private async Task RunPatchPakVerifyAsync(string usmapPath, string aesKey, CancellationToken ct)
+        {
+            Report("PatchPak: Searching for pakchunk3-Windows_0_P.pak...", 0.00);
+
+            string patchPakPath = FindPatchPakPath();
+            if (string.IsNullOrEmpty(patchPakPath))
+            {
+                Report("PatchPak: pakchunk3-Windows_0_P.pak not found. Skipping...", 1.0);
+                return;
+            }
+
+            Report("PatchPak: Loading PAK...", 0.10);
+            string tempDir = Path.Combine(Path.GetTempPath(), "NteMusicSwapper_patch_tmp");
+            string tempPak = Path.Combine(tempDir, Path.GetFileName(patchPakPath));
+            Directory.CreateDirectory(tempDir);
+            File.Move(patchPakPath, tempPak, overwrite: true);
+
+            try
+            {
+                var provider = BuildProvider(tempDir, usmapPath, aesKey);
+
+                Report("PatchPak: Retrieving asset list...", 0.15);
+                var allFiles = provider.Files
+                    .Where(kv => !kv.Value.IsUePackagePayload)
+                    .ToList();
+
+                Report("PatchPak: Checking for missing assets in Unpak1...", 0.20);
+                var missing = GetMissingFiles(allFiles, _unpack1HtDir);
+
+                if (missing.Count == 0)
+                {
+                    Report("PatchPak: All assets are present in Unpak1.", 1.0);
                     return;
                 }
 
-                Report($"Extracting {missing.Count:N0} missing assets...", 0.22);
-                // 8. Extract only missing files in parallel
+                Report($"PatchPak: Extracting {missing.Count:N0} missing assets to Unpak1...", 0.22);
                 int done = 0;
                 int total = missing.Count;
 
@@ -116,35 +214,30 @@ namespace NtePakTool
                                 {
                                     var package = provider.SavePackage(gameFile);
                                     foreach (var (vPath, data) in package)
-                                        WriteFile(vPath, data);
+                                        WriteFile(vPath, data, _unpack1HtDir);
                                 }
                                 else
                                 {
                                     var data = provider.SaveAsset(gameFile);
-                                    WriteFile(gameFile.Path, data);
+                                    WriteFile(gameFile.Path, data, _unpack1HtDir);
                                 }
                             }
-                            catch { /* Ignore individual failures and continue */ }
+                            catch { }
 
                             int current = Interlocked.Increment(ref done);
                             double pct = 0.22 + (double)current / total * 0.78;
-                            Report($"Currently running... {current:N0} / {total:N0}", pct);
+                            Report($"PatchPak: Extracting... {current:N0} / {total:N0}", pct);
                         });
                 }, ct);
 
-                Report("Asset extraction completed.", 1.0);
+                Report("PatchPak: Asset extraction to Unpak1 completed.", 1.0);
             }
             finally
             {
-                // Move PAK back to original location
                 if (File.Exists(tempPak))
-                    File.Move(tempPak, pakPath, overwrite: true);
+                    File.Move(tempPak, patchPakPath, overwrite: true);
                 if (Directory.Exists(tempDir))
                     Directory.Delete(tempDir, recursive: true);
-
-                // Delete usmap temporary file
-                if (File.Exists(usmapPath))
-                    File.Delete(usmapPath);
             }
         }
 
@@ -227,6 +320,50 @@ namespace NtePakTool
             return string.Empty;
         }
 
+        private static string FindPatchPakPath()
+        {
+            // Search for pakchunk3-Windows_0_P.pak in PatchPaks folder
+            var drives = DriveInfo.GetDrives()
+                .Where(d => d.IsReady && d.DriveType == DriveType.Fixed)
+                .Select(d => d.RootDirectory.FullName);
+
+            foreach (var drive in drives)
+            {
+                var candidates = new[]
+                {
+                    Path.Combine(drive, "Neverness To Everness", "Client",
+                        "WindowsNoEditor", "HT", "Content", "PatchPaks", "pakchunk3-Windows_0_P.pak"),
+                };
+                foreach (var c in candidates)
+                    if (File.Exists(c)) return c;
+
+                var skipFolders = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+                    { "Windows", "ProgramData", "$RECYCLE.BIN", "AppData", "Recovery" };
+
+                var queue = new Queue<string>();
+                queue.Enqueue(drive);
+                while (queue.Count > 0)
+                {
+                    string cur = queue.Dequeue();
+                    try
+                    {
+                        string candidate = Path.Combine(cur, "pakchunk3-Windows_0_P.pak");
+                        if (File.Exists(candidate) && cur.Contains("PatchPaks"))
+                            return candidate;
+
+                        foreach (var sub in Directory.GetDirectories(cur))
+                        {
+                            string name = Path.GetFileName(sub);
+                            if (!skipFolders.Contains(name))
+                                queue.Enqueue(sub);
+                        }
+                    }
+                    catch { }
+                }
+            }
+            return string.Empty;
+        }
+
         private static DefaultFileProvider BuildProvider(string dir, string usmapPath, string aesKey)
         {
             var versions = new VersionContainer(EGame.GAME_NevernessToEverness);
@@ -246,16 +383,17 @@ namespace NtePakTool
         
         /// Compares the virtual path list from the PAK against the Unpak folder and returns any missing entries
         private List<KeyValuePair<string, CUE4Parse.FileProvider.Objects.GameFile>> GetMissingFiles(
-            IEnumerable<KeyValuePair<string, CUE4Parse.FileProvider.Objects.GameFile>> allFiles)
+            IEnumerable<KeyValuePair<string, CUE4Parse.FileProvider.Objects.GameFile>> allFiles,
+            string unpackHtDir)
         {
             // Collect existing files under Unpak/HT in lowercase
             var existing = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-            if (Directory.Exists(_unpackHtDir))
+            if (Directory.Exists(unpackHtDir))
             {
-                foreach (var f in Directory.GetFiles(_unpackHtDir, "*", SearchOption.AllDirectories))
+                foreach (var f in Directory.GetFiles(unpackHtDir, "*", SearchOption.AllDirectories))
                 {
                     // Convert to virtual path format "HT/Content/..."
-                    string rel = f.Substring(_unpackHtDir.Length - "HT".Length)
+                    string rel = f.Substring(unpackHtDir.Length - "HT".Length)
                                   .Replace(Path.DirectorySeparatorChar, '/');
                     existing.Add(rel.TrimStart('/'));
                 }
@@ -271,17 +409,17 @@ namespace NtePakTool
                 .ToList();
         }
 
-        private void WriteFile(string virtualPath, byte[] data)
+        private void WriteFile(string virtualPath, byte[] data, string unpackHtDir)
         {
             // virtualPath: "HT/Content/..." → Unpak/HT/Content/...
-            //   _unpackHtDir = "...Unpak/HT", so combine after stripping the HT portion
+            //   unpackHtDir = "...Unpak/HT", so combine after stripping the HT portion
             string rel = virtualPath.Replace('/', Path.DirectorySeparatorChar);
 
             // Virtual path starts with "HT\Content\...", so strip the leading "HT\" before combining
             if (rel.StartsWith("HT" + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase))
                 rel = rel.Substring(3);
 
-            string fullPath = Path.Combine(_unpackHtDir, rel);
+            string fullPath = Path.Combine(unpackHtDir, rel);
             Directory.CreateDirectory(Path.GetDirectoryName(fullPath)!);
             File.WriteAllBytes(fullPath, data);
         }

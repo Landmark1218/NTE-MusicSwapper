@@ -39,6 +39,8 @@ namespace NtePakTool
         public string WemName { get; set; } = "";
         public string DisplayName { get; set; } = "";
         public string ImageName { get; set; } = "";
+        public string JsonName { get; set; } = "";
+        public string DurationHex { get; set; } = "";
     }
     //For app settings JSON
     public class AppSettingsJson
@@ -50,5 +52,8 @@ namespace NtePakTool
         public bool UseYouTubeLink { get; set; } = false;
         public long ModSize { get; set; } = 0;
         public int ModApplyDelay { get; set; } = 1000;
+        // PatchPaks (pakchunk3-Windows_0_P.pak) management
+        public long OriginalPatchPakSize { get; set; } = 0;
+        public long PatchModSize { get; set; } = 0;
     }
 }
