@@ -562,14 +562,65 @@ namespace NtePakTool
                             continue;
                         }
 
-                        string[] hexParts = cfg.DurationHex.Split(new char[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
-                        if (hexParts.Length != 8)
-                        {
-                            log($"PatchPak: [FAIL] DurationHex for {cfg.WemName} is not exactly 8 bytes. Value: '{cfg.DurationHex}'. Skipping.");
-                            continue;
-                        }
-                        byte[] searchBytes = hexParts.Select(h => Convert.ToByte(h, 16)).ToArray();
+                        #region origin
 
+                        // string[] hexParts = cfg.DurationHex.Split(new char[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
+                        // if (hexParts.Length != 8)
+                        // {
+                        //     log($"PatchPak: [FAIL] DurationHex for {cfg.WemName} is not exactly 8 bytes. Value: '{cfg.DurationHex}'. Skipping.");
+                        //     continue;
+                        // }
+                        // byte[] searchBytes = hexParts.Select(h => Convert.ToByte(h, 16)).ToArray();
+                        //
+                        // byte[]? newDurationBytes = GetWavDurationAsFloat64LE(t.SourceAudioPath);
+                        // if (newDurationBytes == null)
+                        // {
+                        //     log($"PatchPak: [FAIL] Could not read WAV duration or invalid RIFF header for {t.SourceAudioPath}. Skipping BNK patch.");
+                        //     continue;
+                        // }
+                        //
+                        // if (isCopiedFromBase)
+                        // {
+                        //     bnkToDelete.Add(bnkPath);
+                        // }
+                        // else
+                        // {
+                        //     if (!Directory.Exists(bnkBackupDir)) Directory.CreateDirectory(bnkBackupDir);
+                        //     string bkpPath = Path.Combine(bnkBackupDir, Guid.NewGuid().ToString() + "_" + Path.GetFileName(bnkPath));
+                        //     File.Copy(bnkPath, bkpPath, true);
+                        //     bnkBackupMap[bnkPath] = bkpPath;
+                        // }
+                        //
+                        // byte[] bnkData = File.ReadAllBytes(bnkPath);
+                        // int patchCount = 0;
+                        // for (int i = 0; i <= bnkData.Length - 8; i++)
+                        // {
+                        //     bool match = true;
+                        //     for (int j = 0; j < 8; j++)
+                        //     {
+                        //         if (bnkData[i + j] != searchBytes[j]) { match = false; break; }
+                        //     }
+                        //     if (match)
+                        //     {
+                        //         Array.Copy(newDurationBytes, 0, bnkData, i, 8);
+                        //         patchCount++;
+                        //     }
+                        // }
+                        // File.WriteAllBytes(bnkPath, bnkData);
+                        //
+                        // if (patchCount == 0)
+                        // {
+                        //     log($"PatchPak: [WARNING] DurationHex ({cfg.DurationHex}) was NOT found inside [{Path.GetFileName(bnkPath)}]. 0 occurrences replaced! Value remains default.");
+                        // }
+                        // else
+                        // {
+                        //     log($"PatchPak: [SUCCESS] Patched BNK [{Path.GetFileName(bnkPath)}] duration ({patchCount} occurrence(s) replaced).");
+                        // }
+
+                        #endregion
+                        // sym_update
+                        // [Fix] 스마트 오차 허용 매칭 알고리즘
+                        // 유저가 json에 적은 첫 번째 Hex 값만 가져옵니다.
                         byte[]? newDurationBytes = GetWavDurationAsFloat64LE(t.SourceAudioPath);
                         if (newDurationBytes == null)
                         {
@@ -591,19 +642,37 @@ namespace NtePakTool
 
                         byte[] bnkData = File.ReadAllBytes(bnkPath);
                         int patchCount = 0;
-                        for (int i = 0; i <= bnkData.Length - 8; i++)
+
+                        
+                        string firstHexGroup = cfg.DurationHex.Split(new char[] { ',', '|' }, StringSplitOptions.RemoveEmptyEntries)[0];
+                        string[] hexParts = firstHexGroup.Split(new char[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
+
+                        if (hexParts.Length == 8)
                         {
-                            bool match = true;
-                            for (int j = 0; j < 8; j++)
+                            byte[] searchBytes = hexParts.Select(h => Convert.ToByte(h, 16)).ToArray();
+                            double targetDuration = BitConverter.ToDouble(searchBytes, 0); // 기준 시간 계산
+
+                            for (int i = 0; i <= bnkData.Length - 8; i++)
                             {
-                                if (bnkData[i + j] != searchBytes[j]) { match = false; break; }
-                            }
-                            if (match)
-                            {
-                                Array.Copy(newDurationBytes, 0, bnkData, i, 8);
-                                patchCount++;
+                                // 1차 검사: 마스터가 발견한 후반부 4바이트(Key)가 일치하는지 먼저 확인
+                                if (bnkData[i + 4] == searchBytes[4] &&
+                                    bnkData[i + 5] == searchBytes[5] &&
+                                    bnkData[i + 6] == searchBytes[6] &&
+                                    bnkData[i + 7] == searchBytes[7])
+                                {
+                                    // 2차 검사: 시간으로 변환하여 오차가 1.0 밀리초(0.001초) 미만인지 확인
+                                    double currentVal = BitConverter.ToDouble(bnkData, i);
+                                    if (Math.Abs(currentVal - targetDuration) < 1.0)
+                                    {
+                                        // 오차가 거의 없다면 같은 값으로 취급하고 덮어씌움!
+                                        Array.Copy(newDurationBytes, 0, bnkData, i, 8);
+                                        patchCount++;
+                                        i += 7; // 이미 패치한 8바이트 구간 건너뛰기
+                                    }
+                                }
                             }
                         }
+
                         File.WriteAllBytes(bnkPath, bnkData);
 
                         if (patchCount == 0)
@@ -614,6 +683,7 @@ namespace NtePakTool
                         {
                             log($"PatchPak: [SUCCESS] Patched BNK [{Path.GetFileName(bnkPath)}] duration ({patchCount} occurrence(s) replaced).");
                         }
+                        // 
                     }
                 }
 

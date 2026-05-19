@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("NTE Music Swapper")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+25df8fbd4131eabe4ca70ccea59047822d4b2fc7")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+432c480eb36adbebbae6181435580cf2107b933d")]
 [assembly: System.Reflection.AssemblyProductAttribute("NTE Music Swapper")]
 [assembly: System.Reflection.AssemblyTitleAttribute("NTE Music Swapper")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
