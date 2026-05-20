@@ -24,7 +24,7 @@ namespace NtePakTool
         private bool _isClosingHandled = false;
         private AppSettingsJson appSettings = new AppSettingsJson();
         private readonly string settingsFilePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "app_settings.json");
-        private const string CurrentVersion = "1.7";
+        private const string CurrentVersion = "1.8";
         private bool isBuildingMod = false;
 
         public MainWindow()
@@ -467,12 +467,12 @@ namespace NtePakTool
             e.Cancel = true;
             try
             {
-                gameService.KillProcessesContainingName("HTGame");
-                gameService.KillProcessesContainingName("NTEGlobalGame");
-
+                // プロセスが確実に終了するまでKillを繰り返しながら待機する
                 int retryCount = 0;
                 while ((gameService.IsProcessRunning("HTGame") || gameService.IsProcessRunning("NTEGlobalGame")) && retryCount < 20)
                 {
+                    gameService.KillProcessesContainingName("HTGame");
+                    gameService.KillProcessesContainingName("NTEGlobalGame");
                     await Task.Delay(500);
                     retryCount++;
                 }
@@ -484,7 +484,8 @@ namespace NtePakTool
                 if (File.Exists(pakPath))
                 {
                     long currentPakSize = new FileInfo(pakPath).Length;
-                    if (appSettings.ModSize > 0 && currentPakSize == appSettings.ModSize)
+                    // Modサイズが一致、かつ確実に .bak ファイルが存在する場合のみ復元処理を行う
+                    if (appSettings.ModSize > 0 && currentPakSize == appSettings.ModSize && File.Exists(bakFile))
                     {
                         bool restoreSuccess = false;
                         int fileRetryCount = 0;
@@ -493,12 +494,10 @@ namespace NtePakTool
                         {
                             try
                             {
-                                if (File.Exists(bakFile))
-                                {
-                                    if (File.Exists(modFile)) File.Delete(modFile);
-                                    File.Move(pakPath, modFile);
-                                    File.Move(bakFile, pakPath);
-                                }
+                                if (File.Exists(modFile)) File.Delete(modFile);
+                                File.Move(pakPath, modFile);
+                                File.Move(bakFile, pakPath);
+
                                 restoreSuccess = true;
                                 Debug.WriteLine("Original PAK restored successfully via Rename on closing.");
                             }
@@ -525,7 +524,8 @@ namespace NtePakTool
                     if (File.Exists(patchPakPath))
                     {
                         long currentPatchPakSize = new FileInfo(patchPakPath).Length;
-                        if (appSettings.PatchModSize > 0 && currentPatchPakSize == appSettings.PatchModSize)
+                        // こちらも .bak ファイルの存在を条件に追加
+                        if (appSettings.PatchModSize > 0 && currentPatchPakSize == appSettings.PatchModSize && File.Exists(patchBakFile))
                         {
                             bool patchRestoreSuccess = false;
                             int patchRetryCount = 0;
@@ -533,12 +533,10 @@ namespace NtePakTool
                             {
                                 try
                                 {
-                                    if (File.Exists(patchBakFile))
-                                    {
-                                        if (File.Exists(patchModFile)) File.Delete(patchModFile);
-                                        File.Move(patchPakPath, patchModFile);
-                                        File.Move(patchBakFile, patchPakPath);
-                                    }
+                                    if (File.Exists(patchModFile)) File.Delete(patchModFile);
+                                    File.Move(patchPakPath, patchModFile);
+                                    File.Move(patchBakFile, patchPakPath);
+
                                     patchRestoreSuccess = true;
                                     Debug.WriteLine("PatchPak PAK restored successfully via Rename on closing.");
                                 }
@@ -563,7 +561,6 @@ namespace NtePakTool
                 _ = Dispatcher.InvokeAsync(() => { this.Close(); });
             }
         }
-
         private void TxtSearch_TextChanged(object sender, TextChangedEventArgs e)
         {
             var view = CollectionViewSource.GetDefaultView(WemList);

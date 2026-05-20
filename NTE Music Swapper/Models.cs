@@ -2,7 +2,7 @@ using System.ComponentModel;
 
 namespace NtePakTool
 {
-    //Common data model
+    // Common data model
     public class WemItemBase : INotifyPropertyChanged
     {
         public string RelativePath { get; set; } = "";
@@ -33,16 +33,20 @@ namespace NtePakTool
         public string ImagePath { get; set; } = "";
     }
 
-    //For UI settings JSON
+    // For UI settings JSON
+    // Note: DurationHex field has been removed.
+    //       BNK Duration patching now uses CUE4Parse to parse the .bnk file
+    //       and automatically finds all fields whose name contains "Duration".
     public class UiConfigJson
     {
         public string WemName { get; set; } = "";
         public string DisplayName { get; set; } = "";
         public string ImageName { get; set; } = "";
         public string JsonName { get; set; } = "";
-        public string DurationHex { get; set; } = "";
+        // DurationHex は削除。既存の ui_wem_config.json に残っていても無視される。
     }
-    //For app settings JSON
+
+    // For app settings JSON
     public class AppSettingsJson
     {
         public bool SaveModEnabled { get; set; } = true;

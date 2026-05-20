@@ -2,239 +2,205 @@
   {
     "WemName": "103117793.wem",
     "DisplayName": "Wandering In The Night",
-    "DurationHex": "00 00 00 00 80 B4 06 41",
-    "JsonName": "Play_Music_Radio_Deep_House_001.json",
+    "JsonName": "Play_Music_Radio_Deep_House_001",
     "ImageName": "OST.png"
   },
   {
     "WemName": "607759396.wem",
     "DisplayName": "Day Dream",
-    "DurationHex": "1E A3 9F D5 20 49 06 41",
-    "JsonName": "Play_Music_Radio_Futrue_Bass_001.json",
+    "JsonName": "Play_Music_Radio_Futrue_Bass_001",
     "ImageName": "OST.png"
   },
   {
     "WemName": "821386184.wem",
     "DisplayName": "Drowning",
-    "DurationHex": "61 4E C1 CB 69 81 F9 40",
-    "JsonName": "Play_Music_Radio_Jazz_HipHop_001.json",
+    "JsonName": "Play_Music_Radio_Jazz_HipHop_001",
     "ImageName": "OST.png"
   },
   {
     "WemName": "506071418.wem",
     "DisplayName": "MissionEleven",
-    "DurationHex": "9F AA AA AA 85 4A 06 41",
-    "JsonName": "Play_Music_Radio_Phonk_001.json",
+    "JsonName": "Play_Music_Radio_Phonk_001",
     "ImageName": "OST.png"
   },
   {
     "WemName": "227507113.wem",
     "DisplayName": "NightRun",
-    "DurationHex": "00 00 00 00 00 F9 05 41",
-    "JsonName": "Play_Music_Radio_Synthwave_001.json",
+    "JsonName": "Play_Music_Radio_Synthwave_001",
     "ImageName": "OST.png"
   },
   {
     "WemName": "1040586826.wem",
     "DisplayName": "Elysium",
-    "DurationHex": "00 00 00 00 00 76 06 41",
-    "JsonName": "Play_Music_Radio_Trancestep_001.json",
+    "JsonName": "Play_Music_Radio_Trancestep_001",
     "ImageName": "OST.png"
   },
   {
     "WemName": "813462782.wem",
     "DisplayName": "Dream Land",
-    "DurationHex": "07 65 E2 4A C7 0E 07 41",
-    "JsonName": "Play_Music_Radio_Progressive_Metal_001.json",
+    "JsonName": "Play_Music_Radio_Progressive_Metal_001",
     "ImageName": "OST.png"
   },
   {
     "WemName": "292501124.wem",
     "DisplayName": "Tide Gravity",
-    "DurationHex": "61 55 55 D5 7B 35 06 41",
-    "JsonName": "Play_Music_Radio_UKGarage_001.json",
+    "JsonName": "Play_Music_Radio_UKGarage_001",
     "ImageName": "OST.png"
   },
   {
     "WemName": "1019746358.wem",
     "DisplayName": "Round and round",
-    "DurationHex": "22 00 00 00 80 B4 06 41",
-    "JsonName": "Play_Music_Radio_Round_and_Round_001.json",
+    "JsonName": "Play_Music_Radio_Round_and_Round_001",
     "ImageName": "NTE.png"
   },
   {
     "WemName": "814212925.wem",
     "DisplayName": "ride",
-    "DurationHex": "00 00 00 80 59 1E 0B 41",
-    "JsonName": "Play_Music_Radio_Ride_001.json",
+    "JsonName": "Play_Music_Radio_Ride_001",
     "ImageName": "NTE.png"
   },
   {
     "WemName": "626031971.wem",
     "DisplayName": "Magical Lights",
-    "DurationHex": "00 00 00 00 80 BA 05 41",
-    "JsonName": "Play_Music_Radio_Y_ML.json",
+    "JsonName": "Play_Music_Radio_Y_ML",
     "ImageName": "NTE.png"
   },
   {
     "WemName": "463224937.wem",
     "DisplayName": "The Song Of Nightingale",
-    "DurationHex": "00 00 00 00 80 A8 08 41",
-    "JsonName": "Play_Music_Radio_Y_Tson_Gf.json",
+    "JsonName": "Play_Music_Radio_Y_Tson_Gf",
     "ImageName": "NTE.png"
   },
   {
     "WemName": "205864816.wem",
     "DisplayName": "Afterglow",
-    "DurationHex": "E2 4E 38 17 48 52 0A 41",
-    "JsonName": "Play_Music_Radio_Y_AG.json",
+    "JsonName": "Play_Music_Radio_Y_AG",
     "ImageName": "NTE.png"
   },
   {
     "WemName": "893002161.wem",
     "DisplayName": "City no pop",
-    "DurationHex": "00 00 00 00 00 6D 04 41",
-    "JsonName": "Play_Music_Radio_CityNoPop_001.json",
+    "JsonName": "Play_Music_Radio_CityNoPop_001",
     "ImageName": "NTE.png"
   },
   {
     "WemName": "53536793.wem",
     "DisplayName": "Rage Education",
-    "DurationHex": "6C ED 1F 91 3E 66 10 41",
-    "JsonName": "Play_Music_Radio_P_RE_BWA.json",
+    "JsonName": "Play_Music_Radio_P_RE_BWA",
     "ImageName": "PSX.png"
   },
   {
     "WemName": "162604726.wem",
     "DisplayName": "Last Strike",
-    "DurationHex": "00 00 00 00 A0 6D 0A 41",
-    "JsonName": "Play_Music_Radio_P_LS_BWA_LI.json",
+    "JsonName": "Play_Music_Radio_P_LS_BWA_LI",
     "ImageName": "PSX.png"
   },
   {
     "WemName": "866697796.wem",
     "DisplayName": "Gone With the Storm",
-    "DurationHex": "BD 54 DE 09 97 3D 0A 41",
-    "JsonName": "Play_Music_Radio_P_GWTS.json",
+    "JsonName": "Play_Music_Radio_P_GWTS",
     "ImageName": "PSX.png"
   },
   {
     "WemName": "876660135.wem",
     "DisplayName": "desire surrender",
-    "DurationHex": "00 00 00 00 00 E7 08 41",
-    "JsonName": "Play_Music_Radio_P_DS_BWA.json",
+    "JsonName": "Play_Music_Radio_P_DS_BWA",
     "ImageName": "PSX.png"
   },
   {
     "WemName": "479960360.wem",
     "DisplayName": "Wake Up Your Hero",
-    "DurationHex": "F2 4A F7 06 94 B0 08 41",
-    "JsonName": "Play_Music_Radio_P_WUYH_BWA_LI.json",
+    "JsonName": "Play_Music_Radio_P_WUYH_BWA_LI",
     "ImageName": "PSX.png"
   },
   {
     "WemName": "12138705.wem",
     "DisplayName": "ambitions and visions",
-    "DurationHex": "00 00 00 00 90 52 08 41",
-    "JsonName": "Play_Music_Radio_P_AaV_LI.json",
+    "JsonName": "Play_Music_Radio_P_AaV_LI",
     "ImageName": "PSX.png"
   },
   {
     "WemName": "720850752.wem",
     "DisplayName": "Show Stealer",
-    "DurationHex": "2A 3B 6A 11 72 7C 06 41",
-    "JsonName": "Play_Music_Radio_P_ShS.json",
+    "JsonName": "Play_Music_Radio_P_ShS",
     "ImageName": "PSX.png"
   },
   {
     "WemName": "503119169.wem",
     "DisplayName": "Star Shine",
-    "DurationHex": "FB B7 5B 72 63 27 04 41",
-    "JsonName": "Play_Music_Radio_P_StS.json",
+    "JsonName": "Play_Music_Radio_P_StS",
     "ImageName": "PSX.png"
   },
   {
     "WemName": "148949254.wem",
     "DisplayName": "Deep Zone",
-    "DurationHex": "0E AE 74 6F 80 05 FE 40",
-    "JsonName": "Play_Music_Radio_P_DZ_BWA.json",
+    "JsonName": "Play_Music_Radio_P_DZ_BWA",
     "ImageName": "PSX.png"
   },
   {
     "WemName": "1058935448.wem",
     "DisplayName": "Paradisum",
-    "DurationHex": "E9 A5 F2 4E D8 B3 F8 40",
-    "JsonName": "Play_Music_Radio_P_P_BWA.json",
+    "JsonName": "Play_Music_Radio_P_P_BWA",
     "ImageName": "PSX.png"
   },
   {
     "WemName": "691971547.wem",
     "DisplayName": "Beneath the Mask",
-    "DurationHex": "50 55 55 55 B5 C4 10 41",
-    "JsonName": "Play_Music_Radio_P_BTM_R.json",
+    "JsonName": "Play_Music_Radio_P_BTM_R",
     "ImageName": "PS5.png"
   },
   {
     "WemName": "746224145.wem",
     "DisplayName": "Life Will Change",
-    "DurationHex": "47 F3 C5 83 55 FC 0F 41",
-    "JsonName": "Play_Music_Radio_P_LWC.json",
+    "JsonName": "Play_Music_Radio_P_LWC",
     "ImageName": "PS5.png"
   },
   {
     "WemName": "456822299.wem",
     "DisplayName": "The Seed of Dreams",
-    "DurationHex": "00 00 00 00 00 1D 10 41",
-    "JsonName": "Play_Music_Radio_T_TSOD.json",
+    "JsonName": "Play_Music_Radio_T_TSOD",
     "ImageName": "CD.png"
   },
   {
     "WemName": "1045392251.wem",
     "DisplayName": "Go, Chaser",
-    "DurationHex": "00 00 00 00 E0 6E 0F 41",
-    "JsonName": "Play_Music_Radio_T_GC.json",
+    "JsonName": "Play_Music_Radio_T_GC",
     "ImageName": "CD.png"
   },
   {
     "WemName": "782129106.wem",
     "DisplayName": "Meant To Be",
-    "DurationHex": "00 00 00 00 80 1F 0A 41",
-    "JsonName": "Play_Music_Radio_T_MTB.json",
+    "JsonName": "Play_Music_Radio_T_MTB",
     "ImageName": "CD.png"
   },
   {
     "WemName": "238371407.wem",
     "DisplayName": "New World",
-    "DurationHex": "3A 22 6D 64 6B C8 09 41",
-    "JsonName": "Play_Music_Radio_T_NW.json",
+    "JsonName": "Play_Music_Radio_T_NW",
     "ImageName": "CD.png"
   },
   {
     "WemName": "451831470.wem",
     "DisplayName": "In.The.Light",
-    "DurationHex": "94 12 E0 6E E9 BF 09 41",
-    "JsonName": "Play_Music_Radio_T_ITL.json",
+    "JsonName": "Play_Music_Radio_T_ITL",
     "ImageName": "CD.png"
   },
   {
     "WemName": "278874171.wem",
     "DisplayName": "Mirafleur Hall",
-    "DurationHex": "00 00 00 00 80 A2 09 41",
-    "JsonName": "Play_Music_Radio_T_JHT.json",
+    "JsonName": "Play_Music_Radio_T_JHT",
     "ImageName": "CD.png"
   },
   {
     "WemName": "334313333.wem",
     "DisplayName": "A Midsummer Night's Dream",
-    "DurationHex": "E2 55 CC A0 03 C3 04 41",
-    "JsonName": "Play_Music_Radio_T_ZXM.json",
+    "JsonName": "Play_Music_Radio_T_ZXM",
     "ImageName": "CD.png"
   },
   {
     "WemName": "978928788.wem",
     "DisplayName": "Chocolate",
-    "DurationHex": "00 00 00 00 00 9A 00 41",
-    "JsonName": "Play_Music_Radio_T_CHO.json",
+    "JsonName": "Play_Music_Radio_T_CHO",
     "ImageName": "CD.png"
   }
 ]

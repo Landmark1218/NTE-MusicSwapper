@@ -7,6 +7,9 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
+using CUE4Parse.UE4.Wwise;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using YoutubeExplode;
 using YoutubeExplode.Converter;
 
@@ -20,6 +23,26 @@ namespace NtePakTool
         private readonly Action<string> log;
         private readonly GameService gameService;
 
+        private async Task WaitForFileUnlockAsync(string filePath, int timeoutMs = 15000)
+        {
+            var sw = Stopwatch.StartNew();
+            while (sw.ElapsedMilliseconds < timeoutMs)
+            {
+                try
+                {
+                    using (var fs = File.Open(filePath, FileMode.Open, FileAccess.ReadWrite, FileShare.None))
+                    {
+                        return;
+                    }
+                }
+                catch (IOException)
+                {
+                    await Task.Delay(500);
+                }
+            }
+            log("Warning: Timed out waiting for FFmpeg to release the file. Duration might be inaccurate.");
+        }
+
         public AudioService(string wwiseConsolePath, string unpackDir, GameService gameService, Action<string> log)
         {
             this.wwiseConsolePath = wwiseConsolePath;
@@ -29,7 +52,6 @@ namespace NtePakTool
             this.wprojPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Wwise", "NTE.wproj");
         }
 
-        // Stores the PatchPak mod size from the last BuildModAsync call
         public long LastPatchModSize { get; private set; } = 0;
         private long _lastPatchModSize = 0;
 
@@ -147,7 +169,6 @@ namespace NtePakTool
             var video = await youtube.Videos.GetAsync(videoUrl);
             log($"YouTube: Title: {video.Title} / Duration: {video.Duration}");
 
-            // Use URL hash as filename and reuse if cached
             string safeId = Math.Abs(videoUrl.GetHashCode()).ToString();
             string outputWav = Path.Combine(cacheDir, $"yt_{safeId}.wav");
 
@@ -158,6 +179,9 @@ namespace NtePakTool
                     .SetFFmpegPath(ffmpegLocal)
                     .SetPreset(ConversionPreset.UltraFast));
                 log($"YouTube: Conversion complete → {Path.GetFileName(outputWav)}");
+
+                log("YouTube: Verifying file integrity and waiting for unlock...");
+                await WaitForFileUnlockAsync(outputWav);
             }
             else
             {
@@ -166,156 +190,17 @@ namespace NtePakTool
 
             return outputWav;
         }
+
         // MOD build
-        // sym_update : save mod size when mod build.
         #region origin code
 
         // public async Task BuildModAsync(List<WemItemBase> targets)
         // {
-        //     string exeDir = AppDomain.CurrentDomain.BaseDirectory;
-        //     string wemBackupDir = Path.Combine(exeDir, "WemTempBak_" + DateTime.Now.Ticks);
-        //     var backupMap = new Dictionary<string, string>();
-        //
-        //     try
-        //     {
-        //         if (!File.Exists(wwiseConsolePath))
-        //         {
-        //             try
-        //             {
-        //                 Process.Start(new ProcessStartInfo
-        //                 {
-        //                     FileName = "https://www.audiokinetic.com/en/download-launcher/?platform=1",
-        //                     UseShellExecute = true
-        //                 });
-        //             }
-        //             catch (Exception ex) { log("Browser failed to launch: " + ex.Message); }
-        //
-        //             System.Windows.MessageBox.Show(
-        //                 "WwiseConsole.exe could not be found.\n\n" +
-        //                 "The Wwise Launcher download page has been opened automatically.\n" +
-        //                 "Please run the downloaded installer (exe) and\n" +
-        //                 "install version [ 2025.1.7.9143 ].",
-        //                 "Wwise Installation Required",
-        //                 MessageBoxButton.OK,
-        //                 MessageBoxImage.Information);
-        //             return;
-        //         }
-        //
-        //         log($"Build started: Converting {targets.Count} files...");
-        //
-        //         string tempDir = Path.Combine(Path.GetTempPath(), "NteWemTemp");
-        //         string audioWorkDir = Path.Combine(Path.GetTempPath(), "AudioWork");
-        //         if (Directory.Exists(tempDir)) Directory.Delete(tempDir, true);
-        //         if (Directory.Exists(audioWorkDir)) Directory.Delete(audioWorkDir, true);
-        //         Directory.CreateDirectory(tempDir);
-        //         Directory.CreateDirectory(audioWorkDir);
-        //
-        //         var xml = new StringBuilder(
-        //             "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
-        //             "<ExternalSourcesList SchemaVersion=\"1\" Root=\"" + audioWorkDir + "\">\n");
-        //
-        //         foreach (var t in targets)
-        //         {
-        //             string targetName = Path.GetFileNameWithoutExtension(t.FullPath);
-        //             string renamedSource = Path.Combine(audioWorkDir, targetName + Path.GetExtension(t.SourceAudioPath));
-        //             File.Copy(t.SourceAudioPath, renamedSource, true);
-        //             xml.AppendLine($"<Source Path=\"{Path.GetFileName(renamedSource)}\" Conversion=\"Vorbis Quality High\"/>");
-        //         }
-        //         xml.AppendLine("</ExternalSourcesList>");
-        //
-        //         string wsources = Path.Combine(Path.GetTempPath(), "list.wsources");
-        //         File.WriteAllText(wsources, xml.ToString(), Encoding.UTF8);
-        //
-        //         await gameService.RunProcessAsync(wwiseConsolePath,
-        //             $"convert-external-source \"{wprojPath}\" --source-file \"{wsources}\" --output \"{tempDir}\"");
-        //
-        //         string windowsDir = Path.Combine(tempDir, "Windows");
-        //         if (Directory.Exists(windowsDir))
-        //         {
-        //             foreach (var file in Directory.GetFiles(windowsDir))
-        //             {
-        //                 string destFile = Path.Combine(tempDir, Path.GetFileName(file));
-        //                 if (File.Exists(destFile)) File.Delete(destFile);
-        //                 File.Move(file, destFile);
-        //             }
-        //             Directory.Delete(windowsDir, true);
-        //         }
-        //
-        //         foreach (var t in targets)
-        //         {
-        //             string expectedWem = Path.Combine(tempDir, Path.GetFileNameWithoutExtension(t.FullPath) + ".wem");
-        //             if (!File.Exists(expectedWem))
-        //                 throw new Exception($"File '{Path.GetFileName(t.FullPath)}' WEM conversion failed.");
-        //         }
-        //
-        //         log("Temporarily backing up the original WEM files...");
-        //         Directory.CreateDirectory(wemBackupDir);
-        //         foreach (var t in targets)
-        //         {
-        //             if (File.Exists(t.FullPath))
-        //             {
-        //                 string bkpPath = Path.Combine(wemBackupDir, Guid.NewGuid().ToString() + "_" + Path.GetFileName(t.FullPath));
-        //                 File.Move(t.FullPath, bkpPath);
-        //                 backupMap.Add(t.FullPath, bkpPath);
-        //             }
-        //         }
-        //
-        //         log("The MOD's WEM files are placed in the correct location.");
-        //         foreach (var t in targets)
-        //         {
-        //             string modWemPath = Path.Combine(tempDir, Path.GetFileNameWithoutExtension(t.FullPath) + ".wem");
-        //             if (File.Exists(modWemPath)) File.Copy(modWemPath, t.FullPath, true);
-        //         }
-        //
-        //         var strayWems = Directory.GetFiles(unpackDir, "*.wem", SearchOption.TopDirectoryOnly);
-        //         foreach (var stray in strayWems) { try { File.Delete(stray); } catch { } }
-        //
-        //         log("The Pak conversion process will begin...");
-        //         string base64Key = await gameService.GetAesKeyBase64Async();
-        //         await gameService.PackingProcess(base64Key);
-        //
-        //         log("Build complete!");
-        //         System.Windows.MessageBox.Show("Pak build complete!\nIf Auto-Save is ON, it will be applied automatically next time.");
-        //     }
-        //     catch (Exception ex)
-        //     {
-        //         log("Error: " + ex.Message);
-        //         System.Windows.MessageBox.Show($"An error occurred during the build:\n{ex.Message}\nRestoring original files.");
-        //     }
-        //     finally
-        //     {
-        //         if (Directory.Exists(wemBackupDir))
-        //         {
-        //             log("Deleting MOD files and restoring original files...");
-        //             foreach (var kvp in backupMap)
-        //             {
-        //                 string originalLocation = kvp.Key;
-        //                 string backupLocation = kvp.Value;
-        //                 bool restoreSuccess = false;
-        //                 int retryCount = 0;
-        //
-        //                 while (!restoreSuccess && retryCount < 10)
-        //                 {
-        //                     try
-        //                     {
-        //                         if (File.Exists(originalLocation)) File.Delete(originalLocation);
-        //                         if (File.Exists(backupLocation)) File.Move(backupLocation, originalLocation);
-        //                         restoreSuccess = true;
-        //                     }
-        //                     catch (IOException)
-        //                     {
-        //                         retryCount++;
-        //                         await Task.Delay(500);
-        //                     }
-        //                 }
-        //             }
-        //             try { Directory.Delete(wemBackupDir, true); } catch { }
-        //             log("Restoration process complete. The Unpak folder is now clean.");
-        //         }
-        //     }
+        //     (省略 - 旧コード)
         // }
 
         #endregion
+
         public async Task<long> BuildModAsync(List<WemItemBase> targets)
         {
             string exeDir = AppDomain.CurrentDomain.BaseDirectory;
@@ -418,15 +303,12 @@ namespace NtePakTool
 
                 log("The Pak conversion process will begin...");
                 string base64Key = await gameService.GetAesKeyBase64Async();
-                // [Fix] return modSize to MainWindow
                 long modSize = await gameService.PackingProcess(base64Key);
 
-                // ── PatchPak BKN duration patch + pakchunk3-Windows_0_P.pak build ──
                 long patchModSize = await BuildPatchPakAsync(targets, base64Key);
 
                 log("Build complete!");
                 System.Windows.MessageBox.Show("Pak build complete!\nIf Auto-Save is ON, it will be applied automatically next time.");
-                // Return both sizes packed as a tuple via out-of-band field (stored before return)
                 _lastPatchModSize = patchModSize;
                 LastPatchModSize = _lastPatchModSize;
                 return modSize;
@@ -470,7 +352,7 @@ namespace NtePakTool
             return 0;
         }
 
-        // ── PatchPak: patch BKN duration and build pakchunk3-Windows_0_P.pak ────────
+        // ── PatchPak: CUE4Parse で BNK を解析し Duration フィールドを書き換えてビルド ──
         private async Task<long> BuildPatchPakAsync(List<WemItemBase> targets, string base64Key)
         {
             string exeDir = AppDomain.CurrentDomain.BaseDirectory;
@@ -479,9 +361,7 @@ namespace NtePakTool
             string baseEventDir = Path.Combine(exeDir, "Unpak", "HT", "Content", "WwiseAudio", "Event");
 
             if (!Directory.Exists(eventDir))
-            {
                 Directory.CreateDirectory(eventDir);
-            }
 
             string jsonPath = Path.Combine(exeDir, "ui_wem_config.json");
             List<UiConfigJson>? uiConfig = null;
@@ -491,11 +371,11 @@ namespace NtePakTool
                 {
                     string jsonStr = File.ReadAllText(jsonPath);
                     uiConfig = System.Text.Json.JsonSerializer.Deserialize<List<UiConfigJson>>(jsonStr);
-                    log($"PatchPak: Loaded ui_wem_config.json successfully. Found {uiConfig?.Count ?? 0} entries.");
+                    log($"PatchPak: Loaded ui_wem_config.json ({jsonPath}). Found {uiConfig?.Count ?? 0} entries.");
                 }
                 else
                 {
-                    log("PatchPak: [WARNING] ui_wem_config.json not found. BNK patch will be skipped.");
+                    log($"PatchPak: [WARNING] ui_wem_config.json not found at {jsonPath}. BNK patch will be skipped.");
                 }
             }
             catch (Exception ex) { log("PatchPak: Failed to load ui_wem_config.json: " + ex.Message); }
@@ -511,6 +391,8 @@ namespace NtePakTool
                     foreach (var t in targets)
                     {
                         string wemFileName = Path.GetFileName(t.RelativePath);
+                        log($"PatchPak: ── Processing WEM: {wemFileName} ──");
+
                         var cfg = uiConfig.FirstOrDefault(c =>
                             string.Equals(c.WemName, wemFileName, StringComparison.OrdinalIgnoreCase));
 
@@ -520,63 +402,68 @@ namespace NtePakTool
                             continue;
                         }
 
-                        if (string.IsNullOrEmpty(cfg.JsonName) || string.IsNullOrEmpty(cfg.DurationHex))
+                        if (string.IsNullOrEmpty(cfg.JsonName))
                         {
-                            log($"PatchPak: [SKIP] JsonName or DurationHex is empty for WEM: {wemFileName}");
+                            log($"PatchPak: [SKIP] JsonName is empty for WEM: {wemFileName}");
                             continue;
                         }
 
-                        // JsonNameから拡張子を除いた名前に ".bnk" を付けて検索
+                        // JsonName から .bnk のパスを解決
                         string bnkBaseName = Path.GetFileNameWithoutExtension(cfg.JsonName);
-
-                        string[] bnkFiles = Directory.GetFiles(eventDir, bnkBaseName + ".bnk", SearchOption.AllDirectories);
                         string? bnkPath = null;
                         bool isCopiedFromBase = false;
 
+                        log($"PatchPak: Searching for BNK [{bnkBaseName}.bnk] in {eventDir}");
+                        var bnkFiles = Directory.GetFiles(eventDir, bnkBaseName + ".bnk", SearchOption.AllDirectories);
                         if (bnkFiles.Length > 0)
                         {
                             bnkPath = bnkFiles[0];
+                            log($"PatchPak: Found BNK in Unpak1: {bnkPath}");
                         }
-                        else
+                        else if (Directory.Exists(baseEventDir))
                         {
-                            if (Directory.Exists(baseEventDir))
+                            log($"PatchPak: Not found in Unpak1. Searching base Unpak: {baseEventDir}");
+                            var baseBnkFiles = Directory.GetFiles(baseEventDir, bnkBaseName + ".bnk", SearchOption.AllDirectories);
+                            if (baseBnkFiles.Length > 0)
                             {
-                                string[] baseBnkFiles = Directory.GetFiles(baseEventDir, bnkBaseName + ".bnk", SearchOption.AllDirectories);
-                                if (baseBnkFiles.Length > 0)
-                                {
-                                    string sourceBnk = baseBnkFiles[0];
-                                    string relPath = sourceBnk.Substring(baseEventDir.Length).TrimStart('\\', '/');
-                                    bnkPath = Path.Combine(eventDir, relPath);
-
-                                    Directory.CreateDirectory(Path.GetDirectoryName(bnkPath)!);
-                                    File.Copy(sourceBnk, bnkPath, true);
-                                    isCopiedFromBase = true;
-                                    log($"PatchPak: Found BNK in base Unpak. Copied to Unpak1 for patching: {bnkBaseName}.bnk");
-                                }
+                                string sourceBnk = baseBnkFiles[0];
+                                string relPath = sourceBnk.Substring(baseEventDir.Length).TrimStart('\\', '/');
+                                bnkPath = Path.Combine(eventDir, relPath);
+                                Directory.CreateDirectory(Path.GetDirectoryName(bnkPath)!);
+                                File.Copy(sourceBnk, bnkPath, true);
+                                isCopiedFromBase = true;
+                                log($"PatchPak: Found BNK in base Unpak. Copied to Unpak1: {bnkPath}");
                             }
                         }
 
                         if (string.IsNullOrEmpty(bnkPath))
                         {
-                            log($"PatchPak: [FAIL] BNK file not found in Unpak1 OR Unpak for {cfg.JsonName} (Searched: {bnkBaseName}.bnk). Skipping.");
+                            log($"PatchPak: [FAIL] BNK not found anywhere (searched: {bnkBaseName}.bnk). Skipping.");
                             continue;
                         }
 
-                        string[] hexParts = cfg.DurationHex.Split(new char[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
-                        if (hexParts.Length != 8)
-                        {
-                            log($"PatchPak: [FAIL] DurationHex for {cfg.WemName} is not exactly 8 bytes. Value: '{cfg.DurationHex}'. Skipping.");
-                            continue;
-                        }
-                        byte[] searchBytes = hexParts.Select(h => Convert.ToByte(h, 16)).ToArray();
-
+                        // WAV ファイルの長さをミリ秒 (double) で取得
+                        log($"PatchPak: Reading WAV duration from: {t.SourceAudioPath}");
                         byte[]? newDurationBytes = GetWavDurationAsFloat64LE(t.SourceAudioPath);
                         if (newDurationBytes == null)
                         {
-                            log($"PatchPak: [FAIL] Could not read WAV duration or invalid RIFF header for {t.SourceAudioPath}. Skipping BNK patch.");
+                            log($"PatchPak: [FAIL] Could not read WAV duration from {t.SourceAudioPath}. Skipping BNK patch.");
+                            continue;
+                        }
+                        double newDurationMs = BitConverter.ToDouble(newDurationBytes, 0);
+                        log($"PatchPak: WAV duration = {newDurationMs:F6} ms");
+
+                        // CUE4Parse で BNK を解析して Duration 系フィールドの現在値を収集
+                        byte[] bnkData = File.ReadAllBytes(bnkPath);
+                        var durationValues = ExtractDurationValuesFromBnk(bnkData, bnkBaseName, bnkPath, log);
+
+                        if (durationValues.Count == 0)
+                        {
+                            log($"PatchPak: [WARNING] No Duration fields found in [{bnkPath}]. Skipping patch.");
                             continue;
                         }
 
+                        // バックアップ
                         if (isCopiedFromBase)
                         {
                             bnkToDelete.Add(bnkPath);
@@ -587,33 +474,17 @@ namespace NtePakTool
                             string bkpPath = Path.Combine(bnkBackupDir, Guid.NewGuid().ToString() + "_" + Path.GetFileName(bnkPath));
                             File.Copy(bnkPath, bkpPath, true);
                             bnkBackupMap[bnkPath] = bkpPath;
+                            log($"PatchPak: Backed up BNK to {bkpPath}");
                         }
 
-                        byte[] bnkData = File.ReadAllBytes(bnkPath);
-                        int patchCount = 0;
-                        for (int i = 0; i <= bnkData.Length - 8; i++)
-                        {
-                            bool match = true;
-                            for (int j = 0; j < 8; j++)
-                            {
-                                if (bnkData[i + j] != searchBytes[j]) { match = false; break; }
-                            }
-                            if (match)
-                            {
-                                Array.Copy(newDurationBytes, 0, bnkData, i, 8);
-                                patchCount++;
-                            }
-                        }
+                        // バイナリ内で収集した double 値をすべて新しい値に書き換える
+                        int totalPatched = PatchDurationValuesInBnk(bnkData, durationValues, newDurationBytes, newDurationMs, log);
                         File.WriteAllBytes(bnkPath, bnkData);
 
-                        if (patchCount == 0)
-                        {
-                            log($"PatchPak: [WARNING] DurationHex ({cfg.DurationHex}) was NOT found inside [{Path.GetFileName(bnkPath)}]. 0 occurrences replaced! Value remains default.");
-                        }
+                        if (totalPatched == 0)
+                            log($"PatchPak: [WARNING] All Duration values were found by CUE4Parse but 0 bytes matched in binary. File unchanged: {bnkPath}");
                         else
-                        {
-                            log($"PatchPak: [SUCCESS] Patched BNK [{Path.GetFileName(bnkPath)}] duration ({patchCount} occurrence(s) replaced).");
-                        }
+                            log($"PatchPak: [SUCCESS] {bnkPath} → {totalPatched} byte location(s) patched to {newDurationMs:F6} ms.");
                     }
                 }
 
@@ -650,15 +521,119 @@ namespace NtePakTool
                 if (bnkToDelete.Count > 0)
                 {
                     foreach (var file in bnkToDelete)
-                    {
                         try { if (File.Exists(file)) File.Delete(file); } catch { }
-                    }
                     log("PatchPak: Cleaned up temporary BNK files copied from base Unpak.");
                 }
             }
         }
 
-        // Read WAV duration in seconds and return as float64 (double) LE bytes
+        /// <summary>
+        /// CUE4Parse で .bnk をパースし、キー名に "Duration" を含む全フィールドの
+        /// (キー名, double値) ペアを収集して返す。
+        /// </summary>
+        private static List<(string Key, double Value)> ExtractDurationValuesFromBnk(
+            byte[] bnkData, string bnkName, string bnkFullPath, Action<string> log)
+        {
+            var result = new List<(string Key, double Value)>();
+            try
+            {
+                log($"PatchPak: Parsing BNK with CUE4Parse: {bnkFullPath}");
+                var wwiseAr = new FWwiseArchive(bnkName, bnkData);
+                var reader = new WwiseReader(wwiseAr, new WwiseGameFileSource(null!));
+
+                string json = JsonConvert.SerializeObject(reader, Formatting.None);
+                var root = JObject.Parse(json);
+
+                log($"PatchPak: Scanning parsed JSON tree for keys containing \"Duration\"...");
+                CollectDurationValues(root, result, log);
+                log($"PatchPak: Scan complete. {result.Count} unique Duration value(s) collected.");
+            }
+            catch (Exception ex)
+            {
+                log($"PatchPak: [WARNING] CUE4Parse failed to parse [{bnkFullPath}]: {ex.Message}");
+            }
+            return result;
+        }
+
+        /// <summary>
+        /// JToken ツリーを再帰走査し、プロパティ名に "Duration"（大文字小文字不問）を含む
+        /// 数値トークンをすべて収集する。
+        /// </summary>
+        private static void CollectDurationValues(JToken token, List<(string Key, double Value)> result, Action<string> log)
+        {
+            switch (token.Type)
+            {
+                case JTokenType.Object:
+                    foreach (var prop in ((JObject)token).Properties())
+                    {
+                        if (prop.Name.IndexOf("Duration", StringComparison.OrdinalIgnoreCase) >= 0
+                            && prop.Value.Type == JTokenType.Float)
+                        {
+                            double val = prop.Value.Value<double>();
+                            if (val != 0.0 && !result.Any(r => r.Value == val))
+                            {
+                                result.Add((prop.Name, val));
+                                log($"PatchPak:   [FOUND] Key=\"{prop.Name}\" Value={val:F6} ms");
+                            }
+                        }
+                        CollectDurationValues(prop.Value, result, log);
+                    }
+                    break;
+
+                case JTokenType.Array:
+                    foreach (var item in (JArray)token)
+                        CollectDurationValues(item, result, log);
+                    break;
+            }
+        }
+
+        /// <summary>
+        /// bnkData バイト配列内に存在する、収集した Duration double 値をすべて
+        /// newDurationBytes（8バイト LE double）で上書きする。
+        /// 上書きした総箇所数を返す。
+        /// </summary>
+        private static int PatchDurationValuesInBnk(
+            byte[] bnkData,
+            List<(string Key, double Value)> durationValues,
+            byte[] newDurationBytes,
+            double newDurationMs,
+            Action<string> log)
+        {
+            int totalPatched = 0;
+
+            foreach (var (key, oldVal) in durationValues)
+            {
+                byte[] searchBytes = BitConverter.GetBytes(oldVal);
+                int hitCount = 0;
+
+                for (int i = 0; i <= bnkData.Length - 8; i++)
+                {
+                    bool match = true;
+                    for (int b = 0; b < 8; b++)
+                    {
+                        if (bnkData[i + b] != searchBytes[b]) { match = false; break; }
+                    }
+                    if (match)
+                    {
+                        Array.Copy(newDurationBytes, 0, bnkData, i, 8);
+                        hitCount++;
+                        totalPatched++;
+                        log($"PatchPak:   [PATCH] Key=\"{key}\" OldValue={oldVal:F6} ms → NewValue={newDurationMs:F6} ms (offset=0x{i:X8})");
+                        i += 7;
+                    }
+                }
+
+                if (hitCount == 0)
+                    log($"PatchPak:   [MISS]  Key=\"{key}\" Value={oldVal:F6} ms — bytes not found in binary.");
+            }
+
+            return totalPatched;
+        }
+
+        /// <summary>
+        /// WAV ファイルの長さをミリ秒単位の float64 LE バイト列として返す。
+        /// 失敗時は null を返す。
+        /// </summary>
         private static byte[]? GetWavDurationAsFloat64LE(string wavPath)
         {
             try
@@ -666,11 +641,16 @@ namespace NtePakTool
                 using var fs = new FileStream(wavPath, FileMode.Open, FileAccess.Read);
                 using var br = new BinaryReader(fs);
 
-                // RIFF header
-                string riff = new string(br.ReadChars(4));
+                string ReadFourCC()
+                {
+                    byte[] bytes = br.ReadBytes(4);
+                    return bytes.Length == 4 ? Encoding.ASCII.GetString(bytes) : "";
+                }
+
+                string riff = ReadFourCC();
                 if (riff != "RIFF") return null;
                 br.ReadInt32(); // file size
-                string wave = new string(br.ReadChars(4));
+                string wave = ReadFourCC();
                 if (wave != "WAVE") return null;
 
                 int sampleRate = 0, numChannels = 0, bitsPerSample = 0;
@@ -678,9 +658,12 @@ namespace NtePakTool
 
                 while (fs.Position < fs.Length - 8)
                 {
-                    string chunkId = new string(br.ReadChars(4));
+                    string chunkId = ReadFourCC();
+                    if (string.IsNullOrEmpty(chunkId)) break;
+
                     int chunkSize = br.ReadInt32();
-                    long chunkEnd = fs.Position + chunkSize;
+                    long paddedChunkSize = chunkSize + (chunkSize & 1);
+                    long chunkEnd = fs.Position + paddedChunkSize;
 
                     if (chunkId == "fmt ")
                     {
@@ -703,11 +686,9 @@ namespace NtePakTool
                     }
                 }
 
-                if (sampleRate == 0 || numChannels == 0 || bitsPerSample == 0) return null;
+                if (sampleRate == 0 || numChannels == 0 || bitsPerSample == 0 || dataSize == 0) return null;
 
                 long totalSamples = dataSize / (numChannels * (bitsPerSample / 8));
-
-                // [修正] 秒(Seconds)ではなく、ミリ秒(Milliseconds)に変換する
                 double durationMilliseconds = ((double)totalSamples / sampleRate) * 1000.0;
 
                 return BitConverter.GetBytes(durationMilliseconds); // float64 LE
@@ -716,4 +697,3 @@ namespace NtePakTool
         }
     }
 }
-

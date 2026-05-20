@@ -11,7 +11,9 @@
 	  <Content Include="OST.ico" />
 	</ItemGroup>
 	<ItemGroup>
+	  <PackageReference Include="Microsoft.Diagnostics.Tracing.TraceEvent" Version="3.2.2" />
 	  <PackageReference Include="SkiaSharp" Version="3.119.2" />
+	  <PackageReference Include="System.Diagnostics.Tracing" Version="4.3.0" />
 	  <PackageReference Include="YoutubeExplode" Version="6.6.0" />
 	  <PackageReference Include="YoutubeExplode.Converter" Version="6.6.0" />
 	</ItemGroup>

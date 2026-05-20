@@ -9,6 +9,9 @@ using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
 using System.Windows;
+using Microsoft.Diagnostics.Tracing.Parsers;
+using Microsoft.Diagnostics.Tracing.Session;
+using Microsoft.Diagnostics.Tracing.Parsers.Kernel;
 using MessageBoxOptions = System.Windows.MessageBoxOptions;
 
 namespace NtePakTool
@@ -29,6 +32,93 @@ namespace NtePakTool
             this.unpackDir = unpackDir;
             this.log = log;
         }
+        public Task<bool> WaitForGameFileAccessAndReleaseAsync(string targetPak, int timeoutMs)
+        {
+            var tcs = new TaskCompletionSource<bool>();
+            string targetLower = targetPak.ToLower();
+
+            Thread monitorThread = new Thread(() =>
+            {
+                try
+                {
+                    string sessionName = "NtePakMonitorSession";
+                    if (TraceEventSession.GetActiveSessionNames().Contains(sessionName))
+                    {
+                        var oldSession = new TraceEventSession(sessionName);
+                        oldSession.Stop();
+                    }
+
+                    using var session = new TraceEventSession(sessionName);
+                    session.EnableKernelProvider(KernelTraceEventParser.Keywords.FileIOInit | KernelTraceEventParser.Keywords.FileIO);
+
+                    bool isAccessed = false;
+                    ulong targetFileObject = 0;
+
+                    session.Source.Kernel.FileIORead += data =>
+                    {
+                        if (!isAccessed && data.ProcessName.IndexOf("NTEGlobalGame", StringComparison.OrdinalIgnoreCase) >= 0)
+                        {
+                            if (data.FileName != null && data.FileName.ToLower().Contains(targetLower))
+                            {
+                                Log($"[ETW] READ: {data.ProcessName} is scanning {Path.GetFileName(targetPak)}.");
+                                isAccessed = true;
+                                targetFileObject = data.FileObject;
+                            }
+                        }
+                    };
+
+                    session.Source.Kernel.FileIOCreate += data =>
+                    {
+                        if (!isAccessed && data.ProcessName.IndexOf("NTEGlobalGame", StringComparison.OrdinalIgnoreCase) >= 0)
+                        {
+                            if (data.FileName != null && data.FileName.ToLower().Contains(targetLower))
+                            {
+                                Log($"[ETW] OPEN: {data.ProcessName} is opening {Path.GetFileName(targetPak)}.");
+                                isAccessed = true;
+                                targetFileObject = data.FileObject;
+                            }
+                        }
+                    };
+
+                    session.Source.Kernel.FileIOClose += data =>
+                    {
+                        if (isAccessed && data.ProcessName.IndexOf("NTEGlobalGame", StringComparison.OrdinalIgnoreCase) >= 0)
+                        {
+                            // FileObjectハンドルの一致、またはファイル名の一致で解放を検知
+                            if ((data.FileObject != 0 && data.FileObject == targetFileObject) ||
+                                (data.FileName != null && data.FileName.ToLower().Contains(targetLower)))
+                            {
+                                Log($"[ETW] CLOSED: {data.ProcessName} has finished accessing {Path.GetFileName(targetPak)}.");
+                                session.Stop();
+                                tcs.TrySetResult(true);
+                            }
+                        }
+                    };
+
+                    Task.Delay(timeoutMs).ContinueWith(_ =>
+                    {
+                        if (!tcs.Task.IsCompleted)
+                        {
+                            Log($"[ETW] Timeout reached ({(float)timeoutMs / 1000}s) for {Path.GetFileName(targetPak)}.");
+                            try { session.Stop(); } catch { }
+                            tcs.TrySetResult(false);
+                        }
+                    });
+
+                    session.Source.Process(); // ブロッキング処理
+                }
+                catch (Exception ex)
+                {
+                    Log($"[ETW] Warning (Admin rights required for real-time monitor): {ex.Message}");
+                    tcs.TrySetResult(false);
+                }
+            });
+
+            monitorThread.IsBackground = true;
+            monitorThread.Start();
+
+            return tcs.Task;
+        }
 
         // ── 安全なスワップ処理（ファイル消失＆汚染防止） ──
         public async Task<bool> SafeApplyModAsync(string pakPath, long modSize)
@@ -44,7 +134,11 @@ namespace NtePakTool
             }
 
             long currentSize = new FileInfo(pakPath).Length;
-            if (modSize > 0 && currentSize == modSize)
+
+            // .bak が存在する = 現在の .pak は前回のMOD なので、サイズが同じでも必ず上書きする
+            bool isAlreadyBaked = File.Exists(bakFile);
+
+            if (!isAlreadyBaked && modSize > 0 && currentSize == modSize)
             {
                 Log($"Apply: File is already MOD state. ({Path.GetFileName(pakPath)})");
                 return true;
@@ -55,16 +149,24 @@ namespace NtePakTool
             {
                 try
                 {
-                    if (File.Exists(bakFile)) File.Delete(bakFile);
-                    File.Move(pakPath, bakFile); // 純粋なファイルを退避
+                    if (!File.Exists(bakFile))
+                    {
+                        File.Move(pakPath, bakFile);
+                    }
+                    else
+                    {
+                        Log($"Apply: Backup already exists. Discarding current pak (previous MOD).");
+                        File.Delete(pakPath);
+                    }
 
                     try
                     {
-                        File.Move(modFile, pakPath); // MODファイルを適用
+                        File.Move(modFile, pakPath);
                     }
                     catch (IOException)
                     {
-                        File.Move(bakFile, pakPath); // 失敗時はロールバックしてファイル消失を防ぐ
+                        if (!File.Exists(pakPath) && File.Exists(bakFile))
+                            File.Move(bakFile, pakPath);
                         throw;
                     }
                     Log($"Apply Success: Swap completed for {Path.GetFileName(pakPath)}");
@@ -73,7 +175,7 @@ namespace NtePakTool
                 catch (IOException)
                 {
                     retryCount++;
-                    await Task.Delay(500); // ロックされている場合は待機してリトライ
+                    await Task.Delay(500);
                 }
             }
             Log($"Apply Error: File locked by process. Swap failed for {Path.GetFileName(pakPath)}");
@@ -367,14 +469,24 @@ namespace NtePakTool
                 }
                 Log("Bypass: File verification success. Starting Launcher...");
 
+                // 【修正】ランチャーを起動する「直前」にETW監視を開始し、起動時のアクセスを確実に捉える
+                Task<bool> monitorTask = WaitForGameFileAccessAndReleaseAsync(pakPath, 30000); // 最大30秒待機
+
                 try { Process.Start(new ProcessStartInfo(LauncherPath) { UseShellExecute = true }); }
                 catch (Exception ex) { Log("Launcher Start Error: " + ex.Message); return; }
 
                 Log("Bypass: Waiting for Launcher window to appear...");
                 while (!IsLauncherWindowVisible("NTEGlobalGame")) await Task.Delay(100);
 
-                Log($"Bypass: Launcher window detected! Waiting {(float)modApplyDelay / 1000}s for mod injection...");
-                await Task.Delay(modApplyDelay);
+                Log($"Bypass: Launcher window detected! Waiting for ETW verification to finish...");
+
+                // 監視タスクの結果を待つ
+                bool monitorSuccess = await monitorTask;
+                if (!monitorSuccess)
+                {
+                    Log("Bypass Warning: ETW monitor timed out or failed (Admin mode?). Applying safe delay fallback...");
+                    await Task.Delay(modApplyDelay);
+                }
 
                 if (File.Exists(modFile))
                 {
@@ -602,11 +714,19 @@ namespace NtePakTool
                     return;
                 }
 
+                Task<bool> monitorTask = WaitForGameFileAccessAndReleaseAsync(pakPath, 5000); // 5秒タイムアウト
+
                 Log("PatchPak Bypass: Waiting for Launcher window to appear...");
                 while (!IsLauncherWindowVisible("NTEGlobalGame")) await Task.Delay(100);
 
-                Log($"PatchPak Bypass: Launcher window detected! Waiting {(float)modApplyDelay / 1000}s for PatchPak mod injection...");
-                await Task.Delay(modApplyDelay);
+                Log($"PatchPak Bypass: Launcher window detected! Waiting for ETW verification to finish...");
+
+                bool monitorSuccess = await monitorTask;
+                if (!monitorSuccess)
+                {
+                    Log("PatchPak Bypass Warning: ETW monitor timed out (likely already verified). Applying safe delay fallback...");
+                    await Task.Delay(modApplyDelay);
+                }
 
                 if (File.Exists(modFile))
                 {
