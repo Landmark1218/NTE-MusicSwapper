@@ -167,7 +167,8 @@ namespace NtePakTool
             }
             catch (Exception ex) { Log("Settings Load Error: " + ex.Message); }
             ChkSaveMod.IsChecked = appSettings.SaveModEnabled;
-            ChkUseYouTube.IsChecked = appSettings.UseYouTubeLink;
+            // sym_update : Added smart detection feature for links or paths
+            //ChkUseYouTube.IsChecked = appSettings.UseYouTubeLink;
         }
 
         private void SaveSettings()
@@ -269,26 +270,102 @@ namespace NtePakTool
                 item.IsSelected = !item.IsSelected;
         }
 
+        // private async void BrowseAudio_Click(object sender, RoutedEventArgs e)
+        // {
+        //     if (((FrameworkElement)sender).DataContext is WemItemBase item)
+        //     {
+        //         if (appSettings.UseYouTubeLink)
+        //         {
+        //             var dialog = new YouTubeInputWindow { Owner = this };
+        //             if (dialog.ShowDialog() != true || string.IsNullOrWhiteSpace(dialog.YouTubeUrl)) return;
+        //
+        //             string url = dialog.YouTubeUrl.Trim();
+        //             item.SourceAudioPath = "YouTube: Downloading... please wait";
+        //             item.IsSelected = false;
+        //             BtnBuildMod.IsEnabled = false;
+        //
+        //             try
+        //             {
+        //                 string convertedWav = await audioService.DownloadFromYouTubeAsync(url);
+        //                 item.SourceAudioPath = convertedWav;
+        //                 item.IsSelected = true;
+        //                 Log($"YouTube download complete: {Path.GetFileName(convertedWav)}");
+        //             }
+        //             catch (Exception ex)
+        //             {
+        //                 item.SourceAudioPath = "No file selected";
+        //                 Log($"YouTube download failed: {ex.Message}");
+        //                 System.Windows.MessageBox.Show($"Download from YouTube failed.:\n{ex.Message}", "Download Error", MessageBoxButton.OK, MessageBoxImage.Warning);
+        //             }
+        //             finally { BtnBuildMod.IsEnabled = true; }
+        //         }
+        //         else
+        //         {
+        //             var ofd = new Microsoft.Win32.OpenFileDialog { Filter = "Audio Files|*.wav;*.mp3;*.ogg" };
+        //             if (ofd.ShowDialog() != true) return;
+        //
+        //             string selectedPath = ofd.FileName;
+        //             string ext = Path.GetExtension(selectedPath).ToLowerInvariant();
+        //
+        //             if (ext == ".wav")
+        //             {
+        //                 item.SourceAudioPath = selectedPath;
+        //                 item.IsSelected = true;
+        //             }
+        //             else
+        //             {
+        //                 Log($"Non-WAV file detected ({ext}). Converting to WAV in background...");
+        //                 item.SourceAudioPath = "Converting... please wait";
+        //                 item.IsSelected = false;
+        //
+        //                 try
+        //                 {
+        //                     string convertedWav = await audioService.ConvertToWavAsync(selectedPath);
+        //                     item.SourceAudioPath = convertedWav;
+        //                     item.IsSelected = true;
+        //                     Log($"Conversion complete: {Path.GetFileName(convertedWav)}");
+        //                 }
+        //                 catch (Exception ex)
+        //                 {
+        //                     item.SourceAudioPath = "No file selected";
+        //                     Log($"WAV conversion failed: {ex.Message}");
+        //                     System.Windows.MessageBox.Show($"Failed to convert the audio file to WAV:\n{ex.Message}\n\nPlease convert it to WAV manually and try again.", "Conversion Error", MessageBoxButton.OK, MessageBoxImage.Warning);
+        //                 }
+        //             }
+        //         }
+        //     }
+        // }
         private async void BrowseAudio_Click(object sender, RoutedEventArgs e)
         {
             if (((FrameworkElement)sender).DataContext is WemItemBase item)
             {
-                if (appSettings.UseYouTubeLink)
-                {
-                    var dialog = new YouTubeInputWindow { Owner = this };
-                    if (dialog.ShowDialog() != true || string.IsNullOrWhiteSpace(dialog.YouTubeUrl)) return;
+                // 1. 방금 만든 통합 입력창을 띄웁니다.
+                var dialog = new SmartInputWindow { Owner = this };
+                
+                // 만약 취소했거나 빈칸이면 종료
+                if (dialog.ShowDialog() != true || string.IsNullOrWhiteSpace(dialog.ResultPath)) return;
 
-                    string url = dialog.YouTubeUrl.Trim();
+                string input = dialog.ResultPath;
+
+                // 💡 [핵심 로직] 입력값이 http나 www로 시작하거나 youtube.com이 포함되어 있으면 유튜브로 간주!
+                bool isYouTube = input.StartsWith("http", StringComparison.OrdinalIgnoreCase) || 
+                                 input.StartsWith("www", StringComparison.OrdinalIgnoreCase) || 
+                                 input.Contains("youtube.com") || 
+                                 input.Contains("youtu.be");
+
+                if (isYouTube)
+                {
+                    // 🎬 [유튜브 모드 발동]
                     item.SourceAudioPath = "YouTube: Downloading... please wait";
                     item.IsSelected = false;
                     BtnBuildMod.IsEnabled = false;
 
                     try
                     {
-                        string convertedWav = await audioService.DownloadFromYouTubeAsync(url);
+                        string convertedWav = await audioService.DownloadFromYouTubeAsync(input);
                         item.SourceAudioPath = convertedWav;
                         item.IsSelected = true;
-                        Log($"YouTube download complete: {Path.GetFileName(convertedWav)}");
+                        Log($"YouTube download complete: {System.IO.Path.GetFileName(convertedWav)}");
                     }
                     catch (Exception ex)
                     {
@@ -300,15 +377,18 @@ namespace NtePakTool
                 }
                 else
                 {
-                    var ofd = new Microsoft.Win32.OpenFileDialog { Filter = "Audio Files|*.wav;*.mp3;*.ogg" };
-                    if (ofd.ShowDialog() != true) return;
+                    // 🎵 [로컬 파일 모드 발동]
+                    if (!System.IO.File.Exists(input))
+                    {
+                        System.Windows.MessageBox.Show("Invalid file path. 파일이 존재하지 않습니다.", "Error", MessageBoxButton.OK, MessageBoxImage.Warning);
+                        return;
+                    }
 
-                    string selectedPath = ofd.FileName;
-                    string ext = Path.GetExtension(selectedPath).ToLowerInvariant();
+                    string ext = System.IO.Path.GetExtension(input).ToLowerInvariant();
 
                     if (ext == ".wav")
                     {
-                        item.SourceAudioPath = selectedPath;
+                        item.SourceAudioPath = input;
                         item.IsSelected = true;
                     }
                     else
@@ -319,28 +399,29 @@ namespace NtePakTool
 
                         try
                         {
-                            string convertedWav = await audioService.ConvertToWavAsync(selectedPath);
+                            string convertedWav = await audioService.ConvertToWavAsync(input);
                             item.SourceAudioPath = convertedWav;
                             item.IsSelected = true;
-                            Log($"Conversion complete: {Path.GetFileName(convertedWav)}");
+                            Log($"Conversion complete: {System.IO.Path.GetFileName(convertedWav)}");
                         }
                         catch (Exception ex)
                         {
                             item.SourceAudioPath = "No file selected";
                             Log($"WAV conversion failed: {ex.Message}");
-                            System.Windows.MessageBox.Show($"Failed to convert the audio file to WAV:\n{ex.Message}\n\nPlease convert it to WAV manually and try again.", "Conversion Error", MessageBoxButton.OK, MessageBoxImage.Warning);
+                            System.Windows.MessageBox.Show($"Failed to convert the audio file to WAV:\n{ex.Message}", "Conversion Error", MessageBoxButton.OK, MessageBoxImage.Warning);
                         }
                     }
                 }
             }
         }
 
-        private void ChkUseYouTube_Changed(object sender, RoutedEventArgs e)
-        {
-            appSettings.UseYouTubeLink = ChkUseYouTube.IsChecked == true;
-            SaveSettings();
-            Log($"Use YouTube Link: {(appSettings.UseYouTubeLink ? "ON" : "OFF")}");
-        }
+        // sym_update : Added smart detection feature for links or paths
+        // private void ChkUseYouTube_Changed(object sender, RoutedEventArgs e)
+        // {
+        //     appSettings.UseYouTubeLink = ChkUseYouTube.IsChecked == true;
+        //     SaveSettings();
+        //     Log($"Use YouTube Link: {(appSettings.UseYouTubeLink ? "ON" : "OFF")}");
+        // }
 
         private async void BuildPak_Click(object sender, RoutedEventArgs e)
         {
@@ -424,6 +505,10 @@ namespace NtePakTool
                     appSettings.ModSize = newModSize;
                     SaveSettings();
                     Log($"Settings: Mod Size saved successfully.");
+                    
+                    // sym_update : Add LoadPath func
+                    // [Fix] 빌드 성공했으니, 오늘 쓴 경로들을 싹 다 JSON에 기억시킵니다.
+                    audioService.UpdateSavedPaths(targets);
                 }
 
                 long newPatchModSize = audioService.LastPatchModSize;

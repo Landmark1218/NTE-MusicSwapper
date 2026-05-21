@@ -92,19 +92,70 @@ namespace NtePakTool
                 string jsonString = File.ReadAllText(jsonPath);
                 var items = System.Text.Json.JsonSerializer.Deserialize<List<UiConfigJson>>(jsonString);
                 uiWemList.Clear();
+                // sym_update : Add LoadPath func
+                #region origin code
+
+                // if (items != null)
+                // {
+                //     foreach (var item in items)
+                //     {
+                //         uiWemList.Add(new UiWemItem
+                //         {
+                //             RelativePath = item.WemName,
+                //             FullPath = Path.Combine(unpackDir, item.WemName),
+                //             DisplayName = item.DisplayName,
+                //             ImagePath = Path.Combine(imgDir, item.ImageName)
+                //         });
+                //     }
+                // }
+
+                #endregion
+                bool needsSave = false; // 파일이 없어져서 JSON을 수정했는지 체크
+                // [Fix] 원본 텍스트에 "SavedPath"라는 단어가 아예 없다면
+                if (!jsonString.Contains("\"SavedPath\""))
+                {
+                    needsSave = true;
+                }
                 if (items != null)
                 {
                     foreach (var item in items)
                     {
+                        // 저장된 경로가 있고 파일이 진짜 존재하는지 검사
+                        string sourcePath = "No file selected";
+                        bool isSelected = false;
+
+                        if (!string.IsNullOrEmpty(item.SavedPath))
+                        {
+                            if (File.Exists(item.SavedPath))
+                            {
+                                sourcePath = item.SavedPath; // 파일이 있으면 그 경로를 그대로 할당
+                                isSelected = true;           // 체크박스도 자동으로 ON
+                            }
+                            else
+                            {
+                                item.SavedPath = "";         // 파일이 사라졌다면 쿨하게 초기화
+                                needsSave = true;            // JSON 다시 저장해야 한다고 플래그 세움
+                            }
+                        }
+
                         uiWemList.Add(new UiWemItem
                         {
                             RelativePath = item.WemName,
                             FullPath = Path.Combine(unpackDir, item.WemName),
                             DisplayName = item.DisplayName,
-                            ImagePath = Path.Combine(imgDir, item.ImageName)
+                            ImagePath = Path.Combine(imgDir, item.ImageName),
+                            SourceAudioPath = sourcePath,    // 찾은 경로 꽂아주기
+                            IsSelected = isSelected          // 상태 꽂아주기
                         });
                     }
+
+                    // 파일 유실 등으로 값이 비워진 녀석이 있다면 즉시 JSON 덮어쓰기
+                    if (needsSave)
+                    {
+                        SaveUiConfig(items);
+                    }
                 }
+                
             }
             catch (Exception ex) { log("Error loading UI config: " + ex.Message); }
         }
@@ -119,7 +170,9 @@ namespace NtePakTool
             Directory.CreateDirectory(cacheDir);
 
             string baseName = Path.GetFileNameWithoutExtension(inputPath);
-            string outputWav = Path.Combine(cacheDir, baseName + "_" + Math.Abs(inputPath.GetHashCode()) + ".wav");
+            // sym_update : Fixed a bug where already downloaded YouTube songs could not be retrieved using hash values.
+            //string outputWav = Path.Combine(cacheDir, baseName + "_" + Math.Abs(inputPath.GetHashCode()) + ".wav");
+            string outputWav = Path.Combine(cacheDir, baseName + "_" + GetStableStringHash(inputPath) + ".wav");
 
             if (File.Exists(outputWav)) return outputWav;
 
@@ -169,7 +222,14 @@ namespace NtePakTool
             var video = await youtube.Videos.GetAsync(videoUrl);
             log($"YouTube: Title: {video.Title} / Duration: {video.Duration}");
 
-            string safeId = Math.Abs(videoUrl.GetHashCode()).ToString();
+            // sym_update : Fixed a bug where already downloaded YouTube songs could not be retrieved using hash values.
+            //string safeId = Math.Abs(videoUrl.GetHashCode()).ToString();
+            //string safeId = GetStableStringHash(videoUrl);
+            
+            // sym_update : Fixed a bug where the hash value occasionally didn't match due to URL parameters (like ?si=), by directly using the YouTube 11-character unique ID instead of a hash.
+            // [Fix] YoutubeExplode가 분석해둔 '11자리 고유 ID'만 쏙 빼서 씁니다.
+            // 링크 뒤에 ?si=어쩌구 가 아무리 붙어도 고유 ID는 절대 변하지 않습니다.
+            string safeId = video.Id.Value;
             string outputWav = Path.Combine(cacheDir, $"yt_{safeId}.wav");
 
             if (!File.Exists(outputWav))
@@ -694,6 +754,65 @@ namespace NtePakTool
                 return BitConverter.GetBytes(durationMilliseconds); // float64 LE
             }
             catch { return null; }
+        }
+        // sym_update : Fixed a bug where already downloaded YouTube songs could not be retrieved using hash values.
+        // [Fix] 문자열을 절대 변하지 않는 고유 번호로 바꿔주는 함수
+        private string GetStableStringHash(string str)
+        {
+            using (var md5 = System.Security.Cryptography.MD5.Create())
+            {
+                byte[] bytes = md5.ComputeHash(Encoding.UTF8.GetBytes(str));
+                return BitConverter.ToString(bytes).Replace("-", "").Substring(0, 10);
+            }
+        }
+        // sym_update : Add LoadPath func
+        // [Fix] JSON 파일을 덮어쓰기 저장하는 메서드
+        public void SaveUiConfig(List<UiConfigJson> items)
+        {
+            try
+            {
+                string jsonPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "ui_wem_config.json");
+                string jsonString = System.Text.Json.JsonSerializer.Serialize(items, 
+                    new System.Text.Json.JsonSerializerOptions { WriteIndented = true });
+                File.WriteAllText(jsonPath, jsonString);
+            }
+            catch (Exception ex) { log("UiConfig Save Error: " + ex.Message); }
+        }
+        // [Fix] 빌드 성공 시, 사용된 경로들을 JSON에 업데이트하는 메서드
+        public void UpdateSavedPaths(List<WemItemBase> targets)
+        {
+            string jsonPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "ui_wem_config.json");
+            if (!File.Exists(jsonPath)) return;
+
+            try
+            {
+                string jsonString = File.ReadAllText(jsonPath);
+                var items = System.Text.Json.JsonSerializer.Deserialize<List<UiConfigJson>>(jsonString);
+                if (items == null) return;
+
+                bool updated = false;
+                foreach (var t in targets)
+                {
+                    string targetName = Path.GetFileName(t.RelativePath);
+                    // UI 항목 중에 일치하는 놈이 있으면 찾음
+                    var cfg = items.FirstOrDefault(c => string.Equals(c.WemName, targetName, StringComparison.OrdinalIgnoreCase));
+                    
+                    // 기존에 저장된 경로랑 방금 빌드한 경로가 다르면 업데이트!
+                    if (cfg != null && cfg.SavedPath != t.SourceAudioPath)
+                    {
+                        cfg.SavedPath = t.SourceAudioPath;
+                        updated = true;
+                    }
+                }
+
+                // 바뀐 게 하나라도 있으면 싹 저장
+                if (updated)
+                {
+                    SaveUiConfig(items);
+                    log("UiConfig: Saved paths updated successfully.");
+                }
+            }
+            catch (Exception ex) { log("UpdateSavedPaths Error: " + ex.Message); }
         }
     }
 }

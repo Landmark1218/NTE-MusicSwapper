@@ -44,6 +44,9 @@ namespace NtePakTool
         public string ImageName { get; set; } = "";
         public string JsonName { get; set; } = "";
         // DurationHex は削除。既存の ui_wem_config.json に残っていても無視される。
+        // sym_update : Add LoadPath func
+        // [Fix] 이전에 사용했던 파일 경로를 저장할 속성
+        public string SavedPath { get; set; } = "";
     }
 
     // For app settings JSON
@@ -53,7 +56,8 @@ namespace NtePakTool
         public long OriginalPakSize { get; set; } = 0;
         public string GameRootDir { get; set; } = "";
         public string WwiseConsolePath { get; set; } = "";
-        public bool UseYouTubeLink { get; set; } = false;
+        // sym_update : Added smart detection feature for links or paths
+        // public bool UseYouTubeLink { get; set; } = false;
         public long ModSize { get; set; } = 0;
         public int ModApplyDelay { get; set; } = 1000;
         // PatchPaks (pakchunk3-Windows_0_P.pak) management

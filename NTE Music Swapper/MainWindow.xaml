@@ -167,10 +167,11 @@
                 <CheckBox x:Name="ChkSaveMod" Content="Auto-Save &amp; Apply MOD"
                           Foreground="White" HorizontalAlignment="Center"
                           FontSize="11" Checked="ChkSaveMod_Changed" Unchecked="ChkSaveMod_Changed"/>
-                <CheckBox x:Name="ChkUseYouTube" Content="Use YouTube Link"
-                          Foreground="#FF6B6B" HorizontalAlignment="Center"
-                          FontSize="11" Margin="0,5,0,0"
-                          Checked="ChkUseYouTube_Changed" Unchecked="ChkUseYouTube_Changed"/>
+                <!-- sym_update : Added smart detection feature for links or paths -->
+                <!-- <CheckBox x:Name="ChkUseYouTube" Content="Use YouTube Link" -->
+                <!--           Foreground="#FF6B6B" HorizontalAlignment="Center" -->
+                <!--           FontSize="11" Margin="0,5,0,0" -->
+                <!--           Checked="ChkUseYouTube_Changed" Unchecked="ChkUseYouTube_Changed"/> -->
             </StackPanel>
         </Grid>
     </Grid>
