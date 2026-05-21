@@ -120,7 +120,7 @@ namespace NtePakTool
                 {
                     foreach (var item in items)
                     {
-                        // [새로 추가된 로직] 저장된 경로가 있고 파일이 진짜 존재하는지 검사!
+                        // 저장된 경로가 있고 파일이 진짜 존재하는지 검사
                         string sourcePath = "No file selected";
                         bool isSelected = false;
 
@@ -129,7 +129,7 @@ namespace NtePakTool
                             if (File.Exists(item.SavedPath))
                             {
                                 sourcePath = item.SavedPath; // 파일이 있으면 그 경로를 그대로 할당
-                                isSelected = true;           // 체크박스도 자동으로 ON!
+                                isSelected = true;           // 체크박스도 자동으로 ON
                             }
                             else
                             {
@@ -228,7 +228,7 @@ namespace NtePakTool
             
             // sym_update : Fixed a bug where the hash value occasionally didn't match due to URL parameters (like ?si=), by directly using the YouTube 11-character unique ID instead of a hash.
             // [Fix] YoutubeExplode가 분석해둔 '11자리 고유 ID'만 쏙 빼서 씁니다.
-            // 링크 뒤에 ?si=어쩌구 가 아무리 붙어도 고유 ID는 절대 변하지 않습니다!
+            // 링크 뒤에 ?si=어쩌구 가 아무리 붙어도 고유 ID는 절대 변하지 않습니다.
             string safeId = video.Id.Value;
             string outputWav = Path.Combine(cacheDir, $"yt_{safeId}.wav");
 
@@ -756,7 +756,7 @@ namespace NtePakTool
             catch { return null; }
         }
         // sym_update : Fixed a bug where already downloaded YouTube songs could not be retrieved using hash values.
-        // [Fix] 문자열을 절대 변하지 않는 고유 번호로 바꿔주는 마 함수
+        // [Fix] 문자열을 절대 변하지 않는 고유 번호로 바꿔주는 함수
         private string GetStableStringHash(string str)
         {
             using (var md5 = System.Security.Cryptography.MD5.Create())
