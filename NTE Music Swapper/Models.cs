@@ -56,7 +56,8 @@ namespace NtePakTool
         public long OriginalPakSize { get; set; } = 0;
         public string GameRootDir { get; set; } = "";
         public string WwiseConsolePath { get; set; } = "";
-        public bool UseYouTubeLink { get; set; } = false;
+        // sym_update : Added smart detection feature for links or paths
+        // public bool UseYouTubeLink { get; set; } = false;
         public long ModSize { get; set; } = 0;
         public int ModApplyDelay { get; set; } = 1000;
         // PatchPaks (pakchunk3-Windows_0_P.pak) management
