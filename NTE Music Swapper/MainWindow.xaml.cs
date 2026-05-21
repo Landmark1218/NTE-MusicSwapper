@@ -424,6 +424,10 @@ namespace NtePakTool
                     appSettings.ModSize = newModSize;
                     SaveSettings();
                     Log($"Settings: Mod Size saved successfully.");
+                    
+                    // sym_update : Add LoadPath func
+                    // [Fix] 빌드 성공했으니, 오늘 쓴 경로들을 싹 다 JSON에 기억시킵니다.
+                    audioService.UpdateSavedPaths(targets);
                 }
 
                 long newPatchModSize = audioService.LastPatchModSize;

@@ -92,19 +92,70 @@ namespace NtePakTool
                 string jsonString = File.ReadAllText(jsonPath);
                 var items = System.Text.Json.JsonSerializer.Deserialize<List<UiConfigJson>>(jsonString);
                 uiWemList.Clear();
+                // sym_update : Add LoadPath func
+                #region origin code
+
+                // if (items != null)
+                // {
+                //     foreach (var item in items)
+                //     {
+                //         uiWemList.Add(new UiWemItem
+                //         {
+                //             RelativePath = item.WemName,
+                //             FullPath = Path.Combine(unpackDir, item.WemName),
+                //             DisplayName = item.DisplayName,
+                //             ImagePath = Path.Combine(imgDir, item.ImageName)
+                //         });
+                //     }
+                // }
+
+                #endregion
+                bool needsSave = false; // 파일이 없어져서 JSON을 수정했는지 체크
+                // [Fix] 원본 텍스트에 "SavedPath"라는 단어가 아예 없다면
+                if (!jsonString.Contains("\"SavedPath\""))
+                {
+                    needsSave = true;
+                }
                 if (items != null)
                 {
                     foreach (var item in items)
                     {
+                        // [새로 추가된 로직] 저장된 경로가 있고 파일이 진짜 존재하는지 검사!
+                        string sourcePath = "No file selected";
+                        bool isSelected = false;
+
+                        if (!string.IsNullOrEmpty(item.SavedPath))
+                        {
+                            if (File.Exists(item.SavedPath))
+                            {
+                                sourcePath = item.SavedPath; // 파일이 있으면 그 경로를 그대로 할당
+                                isSelected = true;           // 체크박스도 자동으로 ON!
+                            }
+                            else
+                            {
+                                item.SavedPath = "";         // 파일이 사라졌다면 쿨하게 초기화
+                                needsSave = true;            // JSON 다시 저장해야 한다고 플래그 세움
+                            }
+                        }
+
                         uiWemList.Add(new UiWemItem
                         {
                             RelativePath = item.WemName,
                             FullPath = Path.Combine(unpackDir, item.WemName),
                             DisplayName = item.DisplayName,
-                            ImagePath = Path.Combine(imgDir, item.ImageName)
+                            ImagePath = Path.Combine(imgDir, item.ImageName),
+                            SourceAudioPath = sourcePath,    // 찾은 경로 꽂아주기
+                            IsSelected = isSelected          // 상태 꽂아주기
                         });
                     }
+
+                    // 파일 유실 등으로 값이 비워진 녀석이 있다면 즉시 JSON 덮어쓰기
+                    if (needsSave)
+                    {
+                        SaveUiConfig(items);
+                    }
                 }
+                
             }
             catch (Exception ex) { log("Error loading UI config: " + ex.Message); }
         }
@@ -708,6 +759,55 @@ namespace NtePakTool
                 byte[] bytes = md5.ComputeHash(Encoding.UTF8.GetBytes(str));
                 return BitConverter.ToString(bytes).Replace("-", "").Substring(0, 10);
             }
+        }
+        // sym_update : Add LoadPath func
+        // [Fix] JSON 파일을 덮어쓰기 저장하는 메서드
+        public void SaveUiConfig(List<UiConfigJson> items)
+        {
+            try
+            {
+                string jsonPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "ui_wem_config.json");
+                string jsonString = System.Text.Json.JsonSerializer.Serialize(items, 
+                    new System.Text.Json.JsonSerializerOptions { WriteIndented = true });
+                File.WriteAllText(jsonPath, jsonString);
+            }
+            catch (Exception ex) { log("UiConfig Save Error: " + ex.Message); }
+        }
+        // [Fix] 빌드 성공 시, 사용된 경로들을 JSON에 업데이트하는 메서드
+        public void UpdateSavedPaths(List<WemItemBase> targets)
+        {
+            string jsonPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "ui_wem_config.json");
+            if (!File.Exists(jsonPath)) return;
+
+            try
+            {
+                string jsonString = File.ReadAllText(jsonPath);
+                var items = System.Text.Json.JsonSerializer.Deserialize<List<UiConfigJson>>(jsonString);
+                if (items == null) return;
+
+                bool updated = false;
+                foreach (var t in targets)
+                {
+                    string targetName = Path.GetFileName(t.RelativePath);
+                    // UI 항목 중에 일치하는 놈이 있으면 찾음
+                    var cfg = items.FirstOrDefault(c => string.Equals(c.WemName, targetName, StringComparison.OrdinalIgnoreCase));
+                    
+                    // 기존에 저장된 경로랑 방금 빌드한 경로가 다르면 업데이트!
+                    if (cfg != null && cfg.SavedPath != t.SourceAudioPath)
+                    {
+                        cfg.SavedPath = t.SourceAudioPath;
+                        updated = true;
+                    }
+                }
+
+                // 바뀐 게 하나라도 있으면 싹 저장
+                if (updated)
+                {
+                    SaveUiConfig(items);
+                    log("UiConfig: Saved paths updated successfully.");
+                }
+            }
+            catch (Exception ex) { log("UpdateSavedPaths Error: " + ex.Message); }
         }
     }
 }

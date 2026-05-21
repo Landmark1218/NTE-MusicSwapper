@@ -44,6 +44,9 @@ namespace NtePakTool
         public string ImageName { get; set; } = "";
         public string JsonName { get; set; } = "";
         // DurationHex は削除。既存の ui_wem_config.json に残っていても無視される。
+        // sym_update : Add LoadPath func
+        // [Fix] 이전에 사용했던 파일 경로를 저장할 속성
+        public string SavedPath { get; set; } = "";
     }
 
     // For app settings JSON
