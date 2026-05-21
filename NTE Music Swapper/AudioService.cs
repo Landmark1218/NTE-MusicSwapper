@@ -119,7 +119,9 @@ namespace NtePakTool
             Directory.CreateDirectory(cacheDir);
 
             string baseName = Path.GetFileNameWithoutExtension(inputPath);
-            string outputWav = Path.Combine(cacheDir, baseName + "_" + Math.Abs(inputPath.GetHashCode()) + ".wav");
+            // sym_update : Fixed a bug where already downloaded YouTube songs could not be retrieved using hash values.
+            //string outputWav = Path.Combine(cacheDir, baseName + "_" + Math.Abs(inputPath.GetHashCode()) + ".wav");
+            string outputWav = Path.Combine(cacheDir, baseName + "_" + GetStableStringHash(inputPath) + ".wav");
 
             if (File.Exists(outputWav)) return outputWav;
 
@@ -169,7 +171,9 @@ namespace NtePakTool
             var video = await youtube.Videos.GetAsync(videoUrl);
             log($"YouTube: Title: {video.Title} / Duration: {video.Duration}");
 
-            string safeId = Math.Abs(videoUrl.GetHashCode()).ToString();
+            // sym_update : Fixed a bug where already downloaded YouTube songs could not be retrieved using hash values.
+            //string safeId = Math.Abs(videoUrl.GetHashCode()).ToString();
+            string safeId = GetStableStringHash(videoUrl);
             string outputWav = Path.Combine(cacheDir, $"yt_{safeId}.wav");
 
             if (!File.Exists(outputWav))
@@ -694,6 +698,16 @@ namespace NtePakTool
                 return BitConverter.GetBytes(durationMilliseconds); // float64 LE
             }
             catch { return null; }
+        }
+        // sym_update : Fixed a bug where already downloaded YouTube songs could not be retrieved using hash values.
+        // [Fix] 문자열을 절대 변하지 않는 고유 번호로 바꿔주는 마 함수
+        private string GetStableStringHash(string str)
+        {
+            using (var md5 = System.Security.Cryptography.MD5.Create())
+            {
+                byte[] bytes = md5.ComputeHash(Encoding.UTF8.GetBytes(str));
+                return BitConverter.ToString(bytes).Replace("-", "").Substring(0, 10);
+            }
         }
     }
 }
