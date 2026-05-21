@@ -224,7 +224,12 @@ namespace NtePakTool
 
             // sym_update : Fixed a bug where already downloaded YouTube songs could not be retrieved using hash values.
             //string safeId = Math.Abs(videoUrl.GetHashCode()).ToString();
-            string safeId = GetStableStringHash(videoUrl);
+            //string safeId = GetStableStringHash(videoUrl);
+            
+            // sym_update : Fixed a bug where the hash value occasionally didn't match due to URL parameters (like ?si=), by directly using the YouTube 11-character unique ID instead of a hash.
+            // [Fix] YoutubeExplode가 분석해둔 '11자리 고유 ID'만 쏙 빼서 씁니다.
+            // 링크 뒤에 ?si=어쩌구 가 아무리 붙어도 고유 ID는 절대 변하지 않습니다!
+            string safeId = video.Id.Value;
             string outputWav = Path.Combine(cacheDir, $"yt_{safeId}.wav");
 
             if (!File.Exists(outputWav))
