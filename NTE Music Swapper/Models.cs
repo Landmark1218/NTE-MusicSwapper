@@ -30,6 +30,12 @@ namespace NtePakTool
     public class UiWemItem : WemItemBase
     {
         public string DisplayName { get; set; } = "";
+        private string _customName = "";
+        public string CustomName
+        {
+            get { return _customName; }
+            set { _customName = value; OnPropertyChanged("CustomName"); }
+        }
         public string ImagePath { get; set; } = "";
     }
 
@@ -41,6 +47,7 @@ namespace NtePakTool
     {
         public string WemName { get; set; } = "";
         public string DisplayName { get; set; } = "";
+        public string CustomName { get; set; } = "";
         public string ImageName { get; set; } = "";
         public string JsonName { get; set; } = "";
         // DurationHex は削除。既存の ui_wem_config.json に残っていても無視される。
@@ -56,6 +63,7 @@ namespace NtePakTool
         public long OriginalPakSize { get; set; } = 0;
         public string GameRootDir { get; set; } = "";
         public string WwiseConsolePath { get; set; } = "";
+        public string RetocPath { get; set; } = "";
         // sym_update : Added smart detection feature for links or paths
         // public bool UseYouTubeLink { get; set; } = false;
         public long ModSize { get; set; } = 0;
