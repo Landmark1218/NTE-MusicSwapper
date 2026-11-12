@@ -83,7 +83,7 @@
                         </ItemsControl.ItemsPanel>
                         <ItemsControl.ItemTemplate>
                             <DataTemplate>
-                                <Border Margin="4" Padding="6" Background="#141414" BorderThickness="2" CornerRadius="5" Width="135">
+                                <Border Margin="4" Padding="7" Background="#141414" BorderThickness="2" CornerRadius="5" Width="150">
                                     <Border.Style>
                                         <Style TargetType="Border">
                                             <Setter Property="BorderBrush" Value="#333"/>
@@ -96,11 +96,17 @@
                                         </Style>
                                     </Border.Style>
                                     <StackPanel>
+                                        <TextBlock Text="{Binding DisplayName}" Foreground="#CCCCCC" FontWeight="SemiBold" FontSize="9"
+                                                   TextAlignment="Center" Margin="0,0,0,4" TextWrapping="Wrap" Height="28"/>
                                         <Button Background="Transparent" BorderThickness="0" Click="Jacket_Click" Cursor="Hand" Padding="0">
-                                            <Image Source="{Binding ImagePath}" Width="115" Height="115" Stretch="UniformToFill"/>
+                                            <Image Source="{Binding ImagePath}" Width="128" Height="128" Stretch="UniformToFill"/>
                                         </Button>
-                                        <TextBlock Text="{Binding DisplayName}" Foreground="White" FontWeight="Bold" FontSize="10"
-                                                   TextAlignment="Center" Margin="0,4,0,0" TextWrapping="Wrap" Height="28"/>
+                                        <TextBox Text="{Binding CustomName, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                                 LostFocus="CustomName_LostFocus"
+                                                 Foreground="White" FontWeight="Bold" FontSize="10"
+                                                 TextAlignment="Center" Margin="0,5,0,0" Height="32"
+                                                 TextWrapping="Wrap" AcceptsReturn="False"
+                                                 BorderBrush="#555" Background="#202020"/>
                                         <Button Content="Browse" Click="BrowseAudio_Click" Margin="0,4,0,0" Height="20" Background="#444" FontSize="9"/>
                                         <TextBlock Text="{Binding SourceAudioPath}" Foreground="#888" FontSize="8" 
                                                    TextTrimming="CharacterEllipsis" Margin="0,2,0,0" HorizontalAlignment="Center"/>
@@ -173,6 +179,10 @@
                 <!--           FontSize="11" Margin="0,5,0,0" -->
                 <!--           Checked="ChkUseYouTube_Changed" Unchecked="ChkUseYouTube_Changed"/> -->
             </StackPanel>
+
+            <Button x:Name="BtnFindBnk" Grid.Row="2" Grid.ColumnSpan="2" Content="FIND BNK FOR WEM"
+                    Click="FindBnkForWem_Click" Height="22"
+                    Background="#444" Margin="0,6,0,0" FontSize="10"/>
         </Grid>
     </Grid>
 </Window>

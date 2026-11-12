@@ -10,11 +10,11 @@ none
 false
 TRACE;DEBUG;NET;NET8_0;NETCOREAPP;WINDOWS;WINDOWS7_0;NET5_0_OR_GREATER;NET6_0_OR_GREATER;NET7_0_OR_GREATER;NET8_0_OR_GREATER;NETCOREAPP3_0_OR_GREATER;NETCOREAPP3_1_OR_GREATER;WINDOWS7_0_OR_GREATER
 C:\Users\sym\Documents\GitHub\NTE-MusicSwapper\NTE Music Swapper\App.xaml
-4-906933164
+5-2064655038
 1-1914340619
-111197613472
+12-1677372736
 258969624147
-LoadingWindow.xaml;MainWindow.xaml;SmartInputWindow.xaml;YouTubeInputWindow.xaml;
+LoadingWindow.xaml;MainWindow.xaml;SmartInputWindow.xaml;WemSearchWindow.xaml;YouTubeInputWindow.xaml;
 
 False
 

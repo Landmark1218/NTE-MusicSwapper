@@ -24,7 +24,7 @@ namespace NtePakTool
         private bool _isClosingHandled = false;
         private AppSettingsJson appSettings = new AppSettingsJson();
         private readonly string settingsFilePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "app_settings.json");
-        private const string CurrentVersion = "1.8";
+        private const string CurrentVersion = "1.9";
         private bool isBuildingMod = false;
 
         public MainWindow()
@@ -35,10 +35,12 @@ namespace NtePakTool
             LoadSettings();
 
             string wwiseConsolePath = DetectWwiseConsolePath();
+            string retocPath = DetectRetocPath();
             gameService = new GameService(unpackDir, Log);
-            audioService = new AudioService(wwiseConsolePath, unpackDir, gameService, Log);
+            audioService = new AudioService(wwiseConsolePath, unpackDir, gameService, Log, retocPath);
 
             Log($"Using WwiseConsole: {wwiseConsolePath}");
+            Log(string.IsNullOrWhiteSpace(retocPath) ? "Using retoc: not found" : $"Using retoc: {retocPath}");
 
             FileList.ItemsSource = WemList;
             UiListControl.ItemsSource = UiWemList;
@@ -94,6 +96,60 @@ namespace NtePakTool
                 return foundPath;
             }
             return fallbackPath;
+        }
+
+        private string DetectRetocPath()
+        {
+            if (!string.IsNullOrWhiteSpace(appSettings.RetocPath) && File.Exists(appSettings.RetocPath))
+            {
+                Log($"Cache: Loading retoc path from settings: {appSettings.RetocPath}");
+                return appSettings.RetocPath;
+            }
+
+            var candidates = new[]
+            {
+                Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Retoc", "retoc.exe"),
+                Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Retoc", "retoc_cli.exe"),
+                Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "retoc.exe"),
+                Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "retoc_cli.exe"),
+                Path.Combine(Environment.CurrentDirectory, "tools", "retoc", "retoc.exe"),
+                Path.Combine(Environment.CurrentDirectory, "tools", "retoc", "retoc_cli.exe"),
+                Path.Combine(Environment.CurrentDirectory, "retoc.exe"),
+                Path.Combine(Environment.CurrentDirectory, "retoc_cli.exe")
+            };
+
+            string? foundPath = candidates.FirstOrDefault(File.Exists) ??
+                                FindExecutableInPath("retoc.exe") ??
+                                FindExecutableInPath("retoc_cli.exe");
+            if (foundPath != null)
+            {
+                appSettings.RetocPath = foundPath;
+                SaveSettings();
+                Log("Cache: retoc path saved to settings.");
+                return foundPath;
+            }
+
+            return "";
+        }
+
+        private static string? FindExecutableInPath(string exeName)
+        {
+            string? pathEnv = Environment.GetEnvironmentVariable("PATH");
+            if (string.IsNullOrWhiteSpace(pathEnv))
+                return null;
+
+            foreach (string dir in pathEnv.Split(Path.PathSeparator))
+            {
+                try
+                {
+                    string candidate = Path.Combine(dir.Trim('"'), exeName);
+                    if (File.Exists(candidate))
+                        return candidate;
+                }
+                catch { }
+            }
+
+            return null;
         }
 
         private async Task InitializeAppAsync()
@@ -252,6 +308,7 @@ namespace NtePakTool
                         // 第2引数に appSettings.PatchModSize を追加
                         await gameService.PerformPatchPakBypassSwap(appSettings.ModApplyDelay, appSettings.PatchModSize);
 
+                    gameService.RemoveGeneratedTitleModsFromGame();
                     isSwapping = false;
                 }
                 isHtRunningLastState = isHtCurrentlyRunning;
@@ -264,10 +321,68 @@ namespace NtePakTool
 
         private void RefreshList_Click(object sender, RoutedEventArgs e) => audioService.RefreshList(WemList);
 
+        private async void FindBnkForWem_Click(object sender, RoutedEventArgs e)
+        {
+            var dialog = new WemSearchWindow { Owner = this };
+            if (dialog.ShowDialog() != true)
+                return;
+
+            string wemName = AudioService.NormalizeWemFileName(dialog.WemName);
+            if (string.IsNullOrWhiteSpace(wemName))
+                return;
+
+            if (!audioService.WemFileExists(wemName))
+            {
+                System.Windows.MessageBox.Show($"WEM file not found in Unpak or Unpak1:\n{wemName}", "WEM Not Found",
+                    MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+
+            BtnFindBnk.IsEnabled = false;
+            BtnBuildMod.IsEnabled = false;
+
+            try
+            {
+                Log($"BNK search: Looking for BNK that references {wemName}...");
+                string? jsonName = await audioService.FindAndAddUiConfigForWemAsync(wemName);
+
+                if (string.IsNullOrEmpty(jsonName))
+                {
+                    System.Windows.MessageBox.Show("No BNK references this WEM.", "Not Found",
+                        MessageBoxButton.OK, MessageBoxImage.Warning);
+                    return;
+                }
+
+                audioService.LoadUiConfig(UiWemList);
+                System.Windows.MessageBox.Show($"Saved mapping:\n{wemName} -> {jsonName}", "BNK Found",
+                    MessageBoxButton.OK, MessageBoxImage.Information);
+            }
+            catch (Exception ex)
+            {
+                Log("BNK search error: " + ex.Message);
+                System.Windows.MessageBox.Show($"BNK search failed:\n{ex.Message}", "Error",
+                    MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+            finally
+            {
+                BtnFindBnk.IsEnabled = true;
+                BtnBuildMod.IsEnabled = true;
+            }
+        }
+
         private void Jacket_Click(object sender, RoutedEventArgs e)
         {
             if (((FrameworkElement)sender).DataContext is UiWemItem item)
                 item.IsSelected = !item.IsSelected;
+        }
+
+        private void CustomName_LostFocus(object sender, RoutedEventArgs e)
+        {
+            if (((FrameworkElement)sender).DataContext is not UiWemItem item)
+                return;
+
+            audioService.UpdateCustomName(item.RelativePath, item.CustomName);
+            Log($"UI Config: CustomName saved for {item.RelativePath}");
         }
 
         // private async void BrowseAudio_Click(object sender, RoutedEventArgs e)
@@ -444,9 +559,8 @@ namespace NtePakTool
                 foreach (var t in targets)
                 {
                     string fileName = Path.GetFileName(t.RelativePath);
-                    var actualFiles = Directory.GetFiles(unpackDir, fileName, SearchOption.AllDirectories);
-                    if (actualFiles.Length > 0)
-                        t.FullPath = actualFiles.OrderByDescending(p => p.Length).First();
+                    if (!File.Exists(t.FullPath))
+                        t.FullPath = audioService.ResolveWemFullPath(fileName) ?? t.FullPath;
                 }
 
                 if (gameService.IsProcessRunning("HTGame"))
@@ -460,6 +574,8 @@ namespace NtePakTool
                         retryHt++;
                     }
                 }
+
+                gameService.RemoveGeneratedTitleModsFromGame();
 
                 if (!gameService.IsProcessRunning("NTEGlobalGame"))
                 {
@@ -502,6 +618,7 @@ namespace NtePakTool
                 long newModSize = await audioService.BuildModAsync(targets);
                 if (newModSize > 0)
                 {
+                    gameService.ApplyGeneratedTitleModsToGame();
                     appSettings.ModSize = newModSize;
                     SaveSettings();
                     Log($"Settings: Mod Size saved successfully.");
@@ -638,6 +755,7 @@ namespace NtePakTool
                         }
                     }
                 }
+                gameService.RemoveGeneratedTitleModsFromGame();
             }
             catch (Exception ex) { System.Windows.MessageBox.Show($"An unexpected error occurred during the termination process.:\n{ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error); }
             finally

@@ -1,206 +1,274 @@
-[
-  {
-    "WemName": "103117793.wem",
-    "DisplayName": "Wandering In The Night",
-    "JsonName": "Play_Music_Radio_Deep_House_001",
-    "ImageName": "OST.png"
-  },
-  {
-    "WemName": "607759396.wem",
-    "DisplayName": "Day Dream",
-    "JsonName": "Play_Music_Radio_Futrue_Bass_001",
-    "ImageName": "OST.png"
-  },
-  {
-    "WemName": "821386184.wem",
-    "DisplayName": "Drowning",
-    "JsonName": "Play_Music_Radio_Jazz_HipHop_001",
-    "ImageName": "OST.png"
-  },
-  {
-    "WemName": "506071418.wem",
-    "DisplayName": "MissionEleven",
-    "JsonName": "Play_Music_Radio_Phonk_001",
-    "ImageName": "OST.png"
-  },
-  {
-    "WemName": "227507113.wem",
-    "DisplayName": "NightRun",
-    "JsonName": "Play_Music_Radio_Synthwave_001",
-    "ImageName": "OST.png"
-  },
-  {
-    "WemName": "1040586826.wem",
-    "DisplayName": "Elysium",
-    "JsonName": "Play_Music_Radio_Trancestep_001",
-    "ImageName": "OST.png"
-  },
-  {
-    "WemName": "813462782.wem",
-    "DisplayName": "Dream Land",
-    "JsonName": "Play_Music_Radio_Progressive_Metal_001",
-    "ImageName": "OST.png"
-  },
-  {
-    "WemName": "292501124.wem",
-    "DisplayName": "Tide Gravity",
-    "JsonName": "Play_Music_Radio_UKGarage_001",
-    "ImageName": "OST.png"
-  },
-  {
-    "WemName": "1019746358.wem",
-    "DisplayName": "Round and round",
-    "JsonName": "Play_Music_Radio_Round_and_Round_001",
-    "ImageName": "NTE.png"
-  },
-  {
-    "WemName": "814212925.wem",
-    "DisplayName": "ride",
-    "JsonName": "Play_Music_Radio_Ride_001",
-    "ImageName": "NTE.png"
-  },
-  {
-    "WemName": "626031971.wem",
-    "DisplayName": "Magical Lights",
-    "JsonName": "Play_Music_Radio_Y_ML",
-    "ImageName": "NTE.png"
-  },
-  {
-    "WemName": "463224937.wem",
-    "DisplayName": "The Song Of Nightingale",
-    "JsonName": "Play_Music_Radio_Y_Tson_Gf",
-    "ImageName": "NTE.png"
-  },
-  {
-    "WemName": "205864816.wem",
-    "DisplayName": "Afterglow",
-    "JsonName": "Play_Music_Radio_Y_AG",
-    "ImageName": "NTE.png"
-  },
-  {
-    "WemName": "893002161.wem",
-    "DisplayName": "City no pop",
-    "JsonName": "Play_Music_Radio_CityNoPop_001",
-    "ImageName": "NTE.png"
-  },
-  {
-    "WemName": "53536793.wem",
-    "DisplayName": "Rage Education",
-    "JsonName": "Play_Music_Radio_P_RE_BWA",
-    "ImageName": "PSX.png"
-  },
-  {
-    "WemName": "162604726.wem",
-    "DisplayName": "Last Strike",
-    "JsonName": "Play_Music_Radio_P_LS_BWA_LI",
-    "ImageName": "PSX.png"
-  },
-  {
-    "WemName": "866697796.wem",
-    "DisplayName": "Gone With the Storm",
-    "JsonName": "Play_Music_Radio_P_GWTS",
-    "ImageName": "PSX.png"
-  },
-  {
-    "WemName": "876660135.wem",
-    "DisplayName": "desire surrender",
-    "JsonName": "Play_Music_Radio_P_DS_BWA",
-    "ImageName": "PSX.png"
-  },
-  {
-    "WemName": "479960360.wem",
-    "DisplayName": "Wake Up Your Hero",
-    "JsonName": "Play_Music_Radio_P_WUYH_BWA_LI",
-    "ImageName": "PSX.png"
-  },
-  {
-    "WemName": "12138705.wem",
-    "DisplayName": "ambitions and visions",
-    "JsonName": "Play_Music_Radio_P_AaV_LI",
-    "ImageName": "PSX.png"
-  },
-  {
-    "WemName": "720850752.wem",
-    "DisplayName": "Show Stealer",
-    "JsonName": "Play_Music_Radio_P_ShS",
-    "ImageName": "PSX.png"
-  },
-  {
-    "WemName": "503119169.wem",
-    "DisplayName": "Star Shine",
-    "JsonName": "Play_Music_Radio_P_StS",
-    "ImageName": "PSX.png"
-  },
-  {
-    "WemName": "148949254.wem",
-    "DisplayName": "Deep Zone",
-    "JsonName": "Play_Music_Radio_P_DZ_BWA",
-    "ImageName": "PSX.png"
-  },
-  {
-    "WemName": "1058935448.wem",
-    "DisplayName": "Paradisum",
-    "JsonName": "Play_Music_Radio_P_P_BWA",
-    "ImageName": "PSX.png"
-  },
-  {
-    "WemName": "691971547.wem",
-    "DisplayName": "Beneath the Mask",
-    "JsonName": "Play_Music_Radio_P_BTM_R",
-    "ImageName": "PS5.png"
-  },
-  {
-    "WemName": "746224145.wem",
-    "DisplayName": "Life Will Change",
-    "JsonName": "Play_Music_Radio_P_LWC",
-    "ImageName": "PS5.png"
-  },
-  {
-    "WemName": "456822299.wem",
-    "DisplayName": "The Seed of Dreams",
-    "JsonName": "Play_Music_Radio_T_TSOD",
-    "ImageName": "CD.png"
-  },
-  {
-    "WemName": "1045392251.wem",
-    "DisplayName": "Go, Chaser",
-    "JsonName": "Play_Music_Radio_T_GC",
-    "ImageName": "CD.png"
-  },
-  {
-    "WemName": "782129106.wem",
-    "DisplayName": "Meant To Be",
-    "JsonName": "Play_Music_Radio_T_MTB",
-    "ImageName": "CD.png"
-  },
-  {
-    "WemName": "238371407.wem",
-    "DisplayName": "New World",
-    "JsonName": "Play_Music_Radio_T_NW",
-    "ImageName": "CD.png"
-  },
-  {
-    "WemName": "451831470.wem",
-    "DisplayName": "In.The.Light",
-    "JsonName": "Play_Music_Radio_T_ITL",
-    "ImageName": "CD.png"
-  },
-  {
-    "WemName": "278874171.wem",
-    "DisplayName": "Mirafleur Hall",
-    "JsonName": "Play_Music_Radio_T_JHT",
-    "ImageName": "CD.png"
-  },
-  {
-    "WemName": "334313333.wem",
-    "DisplayName": "A Midsummer Night's Dream",
-    "JsonName": "Play_Music_Radio_T_ZXM",
-    "ImageName": "CD.png"
-  },
-  {
-    "WemName": "978928788.wem",
-    "DisplayName": "Chocolate",
-    "JsonName": "Play_Music_Radio_T_CHO",
-    "ImageName": "CD.png"
-  }
+﻿[
+    {
+        "WemName":  "103117793.wem",
+        "DisplayName":  "Wandering In The Night",
+        "CustomName":  "Wandering In The Night",
+        "ImageName":  "OST.png",
+        "JsonName":  "Play_Music_Radio_Deep_House_001",
+        "SavedPath":  ""
+    },
+    {
+        "WemName":  "607759396.wem",
+        "DisplayName":  "Day Dream",
+        "CustomName":  "Day Dream",
+        "ImageName":  "OST.png",
+        "JsonName":  "Play_Music_Radio_Futrue_Bass_001",
+        "SavedPath":  ""
+    },
+    {
+        "WemName":  "821386184.wem",
+        "DisplayName":  "Drowning",
+        "CustomName":  "Drowning",
+        "ImageName":  "OST.png",
+        "JsonName":  "Play_Music_Radio_Jazz_HipHop_001",
+        "SavedPath":  ""
+    },
+    {
+        "WemName":  "506071418.wem",
+        "DisplayName":  "MissionEleven",
+        "CustomName":  "MissionEleven",
+        "ImageName":  "OST.png",
+        "JsonName":  "Play_Music_Radio_Phonk_001",
+        "SavedPath":  ""
+    },
+    {
+        "WemName":  "227507113.wem",
+        "DisplayName":  "NightRun",
+        "CustomName":  "NightRun",
+        "ImageName":  "OST.png",
+        "JsonName":  "Play_Music_Radio_Synthwave_001",
+        "SavedPath":  ""
+    },
+    {
+        "WemName":  "1040586826.wem",
+        "DisplayName":  "Elysium",
+        "CustomName":  "Elysium",
+        "ImageName":  "OST.png",
+        "JsonName":  "Play_Music_Radio_Trancestep_001",
+        "SavedPath":  ""
+    },
+    {
+        "WemName":  "813462782.wem",
+        "DisplayName":  "Dream Land",
+        "CustomName":  "Dream Land",
+        "ImageName":  "OST.png",
+        "JsonName":  "Play_Music_Radio_Progressive_Metal_001",
+        "SavedPath":  ""
+    },
+    {
+        "WemName":  "292501124.wem",
+        "DisplayName":  "Tide Gravity",
+        "CustomName":  "Tide Gravity",
+        "ImageName":  "OST.png",
+        "JsonName":  "Play_Music_Radio_UKGarage_001",
+        "SavedPath":  ""
+    },
+    {
+        "WemName":  "1019746358.wem",
+        "DisplayName":  "Round and round",
+        "CustomName":  "Round and round",
+        "ImageName":  "NTE.png",
+        "JsonName":  "Play_Music_Radio_Round_and_Round_001",
+        "SavedPath":  ""
+    },
+    {
+        "WemName":  "814212925.wem",
+        "DisplayName":  "ride",
+        "CustomName":  "ride",
+        "ImageName":  "NTE.png",
+        "JsonName":  "Play_Music_Radio_Ride_001",
+        "SavedPath":  ""
+    },
+    {
+        "WemName":  "626031971.wem",
+        "DisplayName":  "Magical Lights",
+        "CustomName":  "Magical Lights",
+        "ImageName":  "NTE.png",
+        "JsonName":  "Play_Music_Radio_Y_ML",
+        "SavedPath":  ""
+    },
+    {
+        "WemName":  "463224937.wem",
+        "DisplayName":  "The Song Of Nightingale",
+        "CustomName":  "The Song Of Nightingale",
+        "ImageName":  "NTE.png",
+        "JsonName":  "Play_Music_Radio_Y_Tson_Gf",
+        "SavedPath":  ""
+    },
+    {
+        "WemName":  "205864816.wem",
+        "DisplayName":  "Afterglow",
+        "CustomName":  "Afterglow",
+        "ImageName":  "NTE.png",
+        "JsonName":  "Play_Music_Radio_Y_AG",
+        "SavedPath":  ""
+    },
+    {
+        "WemName":  "893002161.wem",
+        "DisplayName":  "City no pop",
+        "CustomName":  "City no pop",
+        "ImageName":  "NTE.png",
+        "JsonName":  "Play_Music_Radio_CityNoPop_001",
+        "SavedPath":  ""
+    },
+    {
+        "WemName":  "53536793.wem",
+        "DisplayName":  "Rage Education",
+        "CustomName":  "Rage Education",
+        "ImageName":  "PSX.png",
+        "JsonName":  "Play_Music_Radio_P_RE_BWA",
+        "SavedPath":  ""
+    },
+    {
+        "WemName":  "162604726.wem",
+        "DisplayName":  "Last Strike",
+        "CustomName":  "Last Strike",
+        "ImageName":  "PSX.png",
+        "JsonName":  "Play_Music_Radio_P_LS_BWA_LI",
+        "SavedPath":  ""
+    },
+    {
+        "WemName":  "866697796.wem",
+        "DisplayName":  "Gone With the Storm",
+        "CustomName":  "Gone With the Storm",
+        "ImageName":  "PSX.png",
+        "JsonName":  "Play_Music_Radio_P_GWTS",
+        "SavedPath":  ""
+    },
+    {
+        "WemName":  "876660135.wem",
+        "DisplayName":  "desire surrender",
+        "CustomName":  "desire surrender",
+        "ImageName":  "PSX.png",
+        "JsonName":  "Play_Music_Radio_P_DS_BWA",
+        "SavedPath":  ""
+    },
+    {
+        "WemName":  "479960360.wem",
+        "DisplayName":  "Wake Up Your Hero",
+        "CustomName":  "Wake Up Your Hero",
+        "ImageName":  "PSX.png",
+        "JsonName":  "Play_Music_Radio_P_WUYH_BWA_LI",
+        "SavedPath":  ""
+    },
+    {
+        "WemName":  "12138705.wem",
+        "DisplayName":  "ambitions and visions",
+        "CustomName":  "ambitions and visions",
+        "ImageName":  "PSX.png",
+        "JsonName":  "Play_Music_Radio_P_AaV_LI",
+        "SavedPath":  ""
+    },
+    {
+        "WemName":  "720850752.wem",
+        "DisplayName":  "Show Stealer",
+        "CustomName":  "Show Stealer",
+        "ImageName":  "PSX.png",
+        "JsonName":  "Play_Music_Radio_P_ShS",
+        "SavedPath":  ""
+    },
+    {
+        "WemName":  "503119169.wem",
+        "DisplayName":  "Star Shine",
+        "CustomName":  "Star Shine",
+        "ImageName":  "PSX.png",
+        "JsonName":  "Play_Music_Radio_P_StS",
+        "SavedPath":  ""
+    },
+    {
+        "WemName":  "148949254.wem",
+        "DisplayName":  "Deep Zone",
+        "CustomName":  "Deep Zone",
+        "ImageName":  "PSX.png",
+        "JsonName":  "Play_Music_Radio_P_DZ_BWA",
+        "SavedPath":  ""
+    },
+    {
+        "WemName":  "1058935448.wem",
+        "DisplayName":  "Paradisum",
+        "CustomName":  "Paradisum",
+        "ImageName":  "PSX.png",
+        "JsonName":  "Play_Music_Radio_P_P_BWA",
+        "SavedPath":  ""
+    },
+    {
+        "WemName":  "691971547.wem",
+        "DisplayName":  "Beneath the Mask",
+        "CustomName":  "Beneath the Mask",
+        "ImageName":  "PS5.png",
+        "JsonName":  "Play_Music_Radio_P_BTM_R",
+        "SavedPath":  ""
+    },
+    {
+        "WemName":  "746224145.wem",
+        "DisplayName":  "Life Will Change",
+        "CustomName":  "Life Will Change",
+        "ImageName":  "PS5.png",
+        "JsonName":  "Play_Music_Radio_P_LWC",
+        "SavedPath":  ""
+    },
+    {
+        "WemName":  "456822299.wem",
+        "DisplayName":  "The Seed of Dreams",
+        "CustomName":  "The Seed of Dreams",
+        "ImageName":  "CD.png",
+        "JsonName":  "Play_Music_Radio_T_TSOD",
+        "SavedPath":  ""
+    },
+    {
+        "WemName":  "1045392251.wem",
+        "DisplayName":  "Go, Chaser",
+        "CustomName":  "Go, Chaser",
+        "ImageName":  "CD.png",
+        "JsonName":  "Play_Music_Radio_T_GC",
+        "SavedPath":  ""
+    },
+    {
+        "WemName":  "782129106.wem",
+        "DisplayName":  "Meant To Be",
+        "CustomName":  "Meant To Be",
+        "ImageName":  "CD.png",
+        "JsonName":  "Play_Music_Radio_T_MTB",
+        "SavedPath":  ""
+    },
+    {
+        "WemName":  "238371407.wem",
+        "DisplayName":  "New World",
+        "CustomName":  "New World",
+        "ImageName":  "CD.png",
+        "JsonName":  "Play_Music_Radio_T_NW",
+        "SavedPath":  ""
+    },
+    {
+        "WemName":  "451831470.wem",
+        "DisplayName":  "In.The.Light",
+        "CustomName":  "In.The.Light",
+        "ImageName":  "CD.png",
+        "JsonName":  "Play_Music_Radio_T_ITL",
+        "SavedPath":  ""
+    },
+    {
+        "WemName":  "278874171.wem",
+        "DisplayName":  "Mirafleur Hall",
+        "CustomName":  "Mirafleur Hall",
+        "ImageName":  "CD.png",
+        "JsonName":  "Play_Music_Radio_T_JHT",
+        "SavedPath":  ""
+    },
+    {
+        "WemName":  "334313333.wem",
+        "DisplayName":  "A Midsummer Night\u0027s Dream",
+        "CustomName":  "A Midsummer Night\u0027s Dream",
+        "ImageName":  "CD.png",
+        "JsonName":  "Play_Music_Radio_T_ZXM",
+        "SavedPath":  ""
+    },
+    {
+        "WemName":  "978928788.wem",
+        "DisplayName":  "Chocolate",
+        "CustomName":  "Chocolate",
+        "ImageName":  "CD.png",
+        "JsonName":  "Play_Music_Radio_T_CHO",
+        "SavedPath":  ""
+    }
 ]

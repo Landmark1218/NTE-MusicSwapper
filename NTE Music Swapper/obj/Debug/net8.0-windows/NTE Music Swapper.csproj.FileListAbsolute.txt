@@ -1,5 +1,3 @@
-C:\Users\sym\Documents\GitHub\NTE-MusicSwapper\NTE Music Swapper\bin\Debug\net8.0-windows\TraceReloggerLib.dll
-C:\Users\sym\Documents\GitHub\NTE-MusicSwapper\NTE Music Swapper\bin\Debug\net8.0-windows\Dia2Lib.dll
 C:\Users\sym\Documents\GitHub\NTE-MusicSwapper\NTE Music Swapper\bin\Debug\net8.0-windows\x86\KernelTraceControl.dll
 C:\Users\sym\Documents\GitHub\NTE-MusicSwapper\NTE Music Swapper\bin\Debug\net8.0-windows\x86\KernelTraceControl.Win61.dll
 C:\Users\sym\Documents\GitHub\NTE-MusicSwapper\NTE Music Swapper\bin\Debug\net8.0-windows\x86\msdia140.dll
@@ -7,6 +5,8 @@ C:\Users\sym\Documents\GitHub\NTE-MusicSwapper\NTE Music Swapper\bin\Debug\net8.
 C:\Users\sym\Documents\GitHub\NTE-MusicSwapper\NTE Music Swapper\bin\Debug\net8.0-windows\amd64\msdia140.dll
 C:\Users\sym\Documents\GitHub\NTE-MusicSwapper\NTE Music Swapper\bin\Debug\net8.0-windows\arm64\KernelTraceControl.dll
 C:\Users\sym\Documents\GitHub\NTE-MusicSwapper\NTE Music Swapper\bin\Debug\net8.0-windows\arm64\msdia140.dll
+C:\Users\sym\Documents\GitHub\NTE-MusicSwapper\NTE Music Swapper\bin\Debug\net8.0-windows\TraceReloggerLib.dll
+C:\Users\sym\Documents\GitHub\NTE-MusicSwapper\NTE Music Swapper\bin\Debug\net8.0-windows\Dia2Lib.dll
 C:\Users\sym\Documents\GitHub\NTE-MusicSwapper\NTE Music Swapper\bin\Debug\net8.0-windows\NTE Music Swapper.exe
 C:\Users\sym\Documents\GitHub\NTE-MusicSwapper\NTE Music Swapper\bin\Debug\net8.0-windows\NTE Music Swapper.deps.json
 C:\Users\sym\Documents\GitHub\NTE-MusicSwapper\NTE Music Swapper\bin\Debug\net8.0-windows\NTE Music Swapper.runtimeconfig.json
@@ -87,9 +87,13 @@ C:\Users\sym\Documents\GitHub\NTE-MusicSwapper\NTE Music Swapper\bin\Debug\net8.
 C:\Users\sym\Documents\GitHub\NTE-MusicSwapper\NTE Music Swapper\obj\Debug\net8.0-windows\NTE Music Swapper.csproj.AssemblyReference.cache
 C:\Users\sym\Documents\GitHub\NTE-MusicSwapper\NTE Music Swapper\obj\Debug\net8.0-windows\LoadingWindow.baml
 C:\Users\sym\Documents\GitHub\NTE-MusicSwapper\NTE Music Swapper\obj\Debug\net8.0-windows\MainWindow.baml
+C:\Users\sym\Documents\GitHub\NTE-MusicSwapper\NTE Music Swapper\obj\Debug\net8.0-windows\SmartInputWindow.baml
+C:\Users\sym\Documents\GitHub\NTE-MusicSwapper\NTE Music Swapper\obj\Debug\net8.0-windows\WemSearchWindow.baml
 C:\Users\sym\Documents\GitHub\NTE-MusicSwapper\NTE Music Swapper\obj\Debug\net8.0-windows\YouTubeInputWindow.baml
 C:\Users\sym\Documents\GitHub\NTE-MusicSwapper\NTE Music Swapper\obj\Debug\net8.0-windows\LoadingWindow.g.cs
 C:\Users\sym\Documents\GitHub\NTE-MusicSwapper\NTE Music Swapper\obj\Debug\net8.0-windows\MainWindow.g.cs
+C:\Users\sym\Documents\GitHub\NTE-MusicSwapper\NTE Music Swapper\obj\Debug\net8.0-windows\SmartInputWindow.g.cs
+C:\Users\sym\Documents\GitHub\NTE-MusicSwapper\NTE Music Swapper\obj\Debug\net8.0-windows\WemSearchWindow.g.cs
 C:\Users\sym\Documents\GitHub\NTE-MusicSwapper\NTE Music Swapper\obj\Debug\net8.0-windows\YouTubeInputWindow.g.cs
 C:\Users\sym\Documents\GitHub\NTE-MusicSwapper\NTE Music Swapper\obj\Debug\net8.0-windows\App.g.cs
 C:\Users\sym\Documents\GitHub\NTE-MusicSwapper\NTE Music Swapper\obj\Debug\net8.0-windows\NTE Music Swapper_Content.g.cs
@@ -106,5 +110,17 @@ C:\Users\sym\Documents\GitHub\NTE-MusicSwapper\NTE Music Swapper\obj\Debug\net8.
 C:\Users\sym\Documents\GitHub\NTE-MusicSwapper\NTE Music Swapper\obj\Debug\net8.0-windows\NTE Music Swapper.pdb
 C:\Users\sym\Documents\GitHub\NTE-MusicSwapper\NTE Music Swapper\obj\Debug\net8.0-windows\NTE Music Swapper.genruntimeconfig.cache
 C:\Users\sym\Documents\GitHub\NTE-MusicSwapper\NTE Music Swapper\obj\Debug\net8.0-windows\ref\NTE Music Swapper.dll
-C:\Users\sym\Documents\GitHub\NTE-MusicSwapper\NTE Music Swapper\obj\Debug\net8.0-windows\SmartInputWindow.baml
-C:\Users\sym\Documents\GitHub\NTE-MusicSwapper\NTE Music Swapper\obj\Debug\net8.0-windows\SmartInputWindow.g.cs
+C:\Users\sym\Documents\GitHub\NTE-MusicSwapper\tmp-build\TraceReloggerLib.dll
+C:\Users\sym\Documents\GitHub\NTE-MusicSwapper\tmp-build\Dia2Lib.dll
+C:\Users\sym\Documents\GitHub\NTE-MusicSwapper\tmp-build\x86\KernelTraceControl.dll
+C:\Users\sym\Documents\GitHub\NTE-MusicSwapper\tmp-build\x86\KernelTraceControl.Win61.dll
+C:\Users\sym\Documents\GitHub\NTE-MusicSwapper\tmp-build\x86\msdia140.dll
+C:\Users\sym\Documents\GitHub\NTE-MusicSwapper\tmp-build\amd64\KernelTraceControl.dll
+C:\Users\sym\Documents\GitHub\NTE-MusicSwapper\tmp-build\amd64\msdia140.dll
+C:\Users\sym\Documents\GitHub\NTE-MusicSwapper\tmp-build\arm64\KernelTraceControl.dll
+C:\Users\sym\Documents\GitHub\NTE-MusicSwapper\tmp-build\arm64\msdia140.dll
+C:\Users\sym\Documents\GitHub\NTE-MusicSwapper\tmp-build\NTE Music Swapper.exe
+C:\Users\sym\Documents\GitHub\NTE-MusicSwapper\tmp-build\NTE Music Swapper.deps.json
+C:\Users\sym\Documents\GitHub\NTE-MusicSwapper\tmp-build\NTE Music Swapper.runtimeconfig.json
+C:\Users\sym\Documents\GitHub\NTE-MusicSwapper\tmp-build\NTE Music Swapper.dll
+C:\Users\sym\Documents\GitHub\NTE-MusicSwapper\tmp-build\NTE Music Swapper.pdb
