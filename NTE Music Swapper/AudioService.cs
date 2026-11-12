@@ -665,8 +665,8 @@ namespace NtePakTool
 
             try
             {
-                if (!TryDeleteGeneratedTitleModFolders(gameService.OutputDir, log))
-                    return;
+                gameService.RemoveGeneratedTitleModsFromGame();
+                gameService.ClearGeneratedTitleModCache();
 
                 var requested = requestedConfigs
                     .Where(cfg => !string.Equals(
@@ -1187,7 +1187,7 @@ namespace NtePakTool
             try
             {
                 string modBaseName = BuildTitleModBaseName(tablePackage);
-                string modsDir = Path.Combine(gameService.OutputDir, "~mods", modBaseName);
+                string modsDir = gameService.GetGeneratedTitleModCacheDir(modBaseName);
                 if (!TryDeleteOwnTitleModFolder(modsDir, log))
                     return false;
 
@@ -1332,7 +1332,7 @@ namespace NtePakTool
                         }
                     }
 
-                    log($"TitlePatch retoc: Installed generated title IoStore mod to {modsDir}");
+                    log($"TitlePatch retoc: Cached generated title IoStore mod at {modsDir}");
                     return true;
                 }
                 finally

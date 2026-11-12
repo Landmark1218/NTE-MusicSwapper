@@ -26,6 +26,7 @@ namespace NtePakTool
         public string OutputDir { get; private set; } = "";
         public string LauncherPath { get; private set; } = "";
         public string GameRootDir { get; private set; } = "";
+        private const string DisabledTitleModExtension = ".nteoff";
 
         public GameService(string unpackDir, Action<string> log)
         {
@@ -383,6 +384,8 @@ namespace NtePakTool
                             File.Delete(modFile);
                             Log("Startup: Deleted outdated MOD file.");
                         }
+                        RemoveGeneratedTitleModsFromGame();
+                        ClearGeneratedTitleModCache();
 
                         System.Windows.MessageBox.Show(
                             "The game version has been updated, so the MOD has been removed.",
@@ -409,6 +412,7 @@ namespace NtePakTool
                 {
                     Log("Startup: Launcher is already running. Applying MOD directly.");
                     await SafeApplyModAsync(originalPak, appSettings.ModSize);
+                    ApplyGeneratedTitleModsToGame();
                 }
                 else
                 {
@@ -417,6 +421,7 @@ namespace NtePakTool
             }
             else
             {
+                RemoveGeneratedTitleModsFromGame();
                 if (!isLauncherRunning)
                 {
                     if (!string.IsNullOrEmpty(LauncherPath) && File.Exists(LauncherPath))
@@ -495,6 +500,7 @@ namespace NtePakTool
                         bool applied = await SafeApplyModAsync(pakPath, modSize);
                         if (applied)
                         {
+                            ApplyGeneratedTitleModsToGame();
                             System.Windows.MessageBox.Show("Success Mod Apply\nYou can now run the game from the launcher.", "Success Mod Apply",
                                 MessageBoxButton.OK, MessageBoxImage.Information, MessageBoxResult.OK, MessageBoxOptions.DefaultDesktopOnly);
                         }
@@ -502,6 +508,7 @@ namespace NtePakTool
                     else
                     {
                         File.Move(modFile, pakPath);
+                        ApplyGeneratedTitleModsToGame();
                         System.Windows.MessageBox.Show(".pak is missing. you are maybe game repair", ".pak is missing.",
                             MessageBoxButton.OK, MessageBoxImage.Information, MessageBoxResult.OK, MessageBoxOptions.DefaultDesktopOnly);
                         Log("Warning: originFile is missing. you are maybe game repair");
@@ -650,6 +657,8 @@ namespace NtePakTool
                             File.Delete(modFile);
                             Log("PatchPak Startup: Deleted outdated MOD file.");
                         }
+                        RemoveGeneratedTitleModsFromGame();
+                        ClearGeneratedTitleModCache();
                         System.Windows.MessageBox.Show(
                             "The game version has been updated, so the PatchPak MOD has been removed.",
                             "PatchPak Update Detected",
@@ -674,6 +683,7 @@ namespace NtePakTool
                 {
                     Log("PatchPak Startup: Launcher is already running. Applying PatchPak MOD directly.");
                     await SafeApplyModAsync(originalPak, appSettings.PatchModSize);
+                    ApplyGeneratedTitleModsToGame();
                 }
                 else
                 {
@@ -732,11 +742,14 @@ namespace NtePakTool
                 {
                     if (File.Exists(pakPath))
                     {
-                        await SafeApplyModAsync(pakPath, modSize);
+                        bool applied = await SafeApplyModAsync(pakPath, modSize);
+                        if (applied)
+                            ApplyGeneratedTitleModsToGame();
                     }
                     else
                     {
                         File.Move(modFile, pakPath);
+                        ApplyGeneratedTitleModsToGame();
                         Log("PatchPak Bypass Warning: originFile was missing. PatchPak MOD moved to paks.");
                     }
                 }
@@ -829,6 +842,126 @@ namespace NtePakTool
             p.Start();
             p.BeginOutputReadLine();
             return tcs.Task;
+        }
+
+        public string GetGeneratedTitleModCacheDir(string modBaseName)
+        {
+            string modsRoot = string.IsNullOrWhiteSpace(OutputDir)
+                ? Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "TitleMods")
+                : Path.Combine(OutputDir, "~mods");
+            return Path.Combine(modsRoot, modBaseName);
+        }
+
+        public void ClearGeneratedTitleModCache()
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(OutputDir) || !Directory.Exists(OutputDir))
+                    return;
+
+                string modsRoot = Path.Combine(OutputDir, "~mods");
+                if (!Directory.Exists(modsRoot))
+                    return;
+
+                foreach (string dir in EnumerateGeneratedTitleModDirs(modsRoot))
+                {
+                    Directory.Delete(dir, true);
+                    Log($"TitleMods: Deleted generated title mod cache: {Path.GetFileName(dir)}");
+                }
+            }
+            catch (Exception ex)
+            {
+                Log("TitleMods: Failed to clear generated title mod cache: " + ex.Message);
+            }
+        }
+
+        public void ApplyGeneratedTitleModsToGame()
+        {
+            if (string.IsNullOrWhiteSpace(OutputDir) || !Directory.Exists(OutputDir))
+                return;
+
+            string modsRoot = Path.Combine(OutputDir, "~mods");
+            SetGeneratedTitleModsActive(modsRoot, active: true);
+        }
+
+        public void RemoveGeneratedTitleModsFromGame()
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(OutputDir) || !Directory.Exists(OutputDir))
+                    return;
+
+                string modsRoot = Path.Combine(OutputDir, "~mods");
+                if (!Directory.Exists(modsRoot))
+                    return;
+
+                SetGeneratedTitleModsActive(modsRoot, active: false);
+            }
+            catch (Exception ex)
+            {
+                Log("TitleMods: Failed to deactivate generated title mods in game ~mods: " + ex.Message);
+            }
+        }
+
+        private void SetGeneratedTitleModsActive(string modsRoot, bool active)
+        {
+            foreach (string dir in EnumerateGeneratedTitleModDirs(modsRoot))
+            {
+                try
+                {
+                    int changed = 0;
+                    foreach (string file in Directory.GetFiles(dir, "*", SearchOption.TopDirectoryOnly))
+                    {
+                        string ext = Path.GetExtension(file);
+                        bool isActiveContainer =
+                            ext.Equals(".pak", StringComparison.OrdinalIgnoreCase) ||
+                            ext.Equals(".ucas", StringComparison.OrdinalIgnoreCase) ||
+                            ext.Equals(".utoc", StringComparison.OrdinalIgnoreCase);
+                        bool isDisabledContainer = file.EndsWith(DisabledTitleModExtension, StringComparison.OrdinalIgnoreCase);
+
+                        if (active && isDisabledContainer)
+                        {
+                            string activePath = file[..^DisabledTitleModExtension.Length];
+                            if (!File.Exists(activePath))
+                            {
+                                File.Move(file, activePath);
+                                changed++;
+                            }
+                        }
+                        else if (!active && isActiveContainer)
+                        {
+                            string disabledPath = file + DisabledTitleModExtension;
+                            if (!File.Exists(disabledPath))
+                            {
+                                File.Move(file, disabledPath);
+                                changed++;
+                            }
+                        }
+                    }
+
+                    if (changed > 0)
+                    {
+                        string state = active ? "Enabled" : "Disabled";
+                        Log($"TitleMods: {state} generated title mod: {Path.GetFileName(dir)}");
+                    }
+                }
+                catch (Exception ex)
+                {
+                    string action = active ? "enable" : "disable";
+                    Log($"TitleMods: Failed to {action} {Path.GetFileName(dir)}: {ex.Message}");
+                }
+            }
+        }
+
+        private static IEnumerable<string> EnumerateGeneratedTitleModDirs(string modsRoot)
+        {
+            if (!Directory.Exists(modsRoot))
+                return [];
+
+            return Directory.GetDirectories(modsRoot, "NteMusicSwapper_*", SearchOption.TopDirectoryOnly)
+                .Where(Directory.Exists)
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .ToList();
         }
 
         private void Log(string m) => log?.Invoke(m);

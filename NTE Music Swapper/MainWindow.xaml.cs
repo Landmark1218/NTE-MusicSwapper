@@ -308,6 +308,7 @@ namespace NtePakTool
                         // 第2引数に appSettings.PatchModSize を追加
                         await gameService.PerformPatchPakBypassSwap(appSettings.ModApplyDelay, appSettings.PatchModSize);
 
+                    gameService.RemoveGeneratedTitleModsFromGame();
                     isSwapping = false;
                 }
                 isHtRunningLastState = isHtCurrentlyRunning;
@@ -574,6 +575,8 @@ namespace NtePakTool
                     }
                 }
 
+                gameService.RemoveGeneratedTitleModsFromGame();
+
                 if (!gameService.IsProcessRunning("NTEGlobalGame"))
                 {
                     if (!string.IsNullOrEmpty(gameService.LauncherPath) && File.Exists(gameService.LauncherPath))
@@ -615,6 +618,7 @@ namespace NtePakTool
                 long newModSize = await audioService.BuildModAsync(targets);
                 if (newModSize > 0)
                 {
+                    gameService.ApplyGeneratedTitleModsToGame();
                     appSettings.ModSize = newModSize;
                     SaveSettings();
                     Log($"Settings: Mod Size saved successfully.");
@@ -751,6 +755,7 @@ namespace NtePakTool
                         }
                     }
                 }
+                gameService.RemoveGeneratedTitleModsFromGame();
             }
             catch (Exception ex) { System.Windows.MessageBox.Show($"An unexpected error occurred during the termination process.:\n{ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error); }
             finally
